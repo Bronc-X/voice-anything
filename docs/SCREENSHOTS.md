@@ -1,6 +1,6 @@
 # 截图来源
 
-`images/windows-*.png` 来自打包后的 WPF 应用；`images/macos-*.png` 来自 GitHub macOS runner 上打包后的 SwiftUI/AppKit 应用。使用程序自带的预览入口和临时演示数据，不连接硬件，不读取个人历史。复现命令见 [BUILD.md](BUILD.md)。
+`images/windows-*.png` 来自本地编译的 WPF 应用；`images/macos-*.png` 来自 GitHub macOS runner 上打包后的 SwiftUI/AppKit 应用。使用程序自带的预览入口和临时演示数据，不连接硬件，不读取个人历史。复现命令见 [BUILD.md](BUILD.md)。
 
 截图只证明界面已运行和渲染，不能证明真实设备连接成功。记录与状态页保留演示标记。
 
