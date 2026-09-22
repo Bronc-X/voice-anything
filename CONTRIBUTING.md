@@ -30,6 +30,14 @@
 
 ## 验证与提交
 
+先用应用相同的解析器验证配置，不需要连接硬件：
+
+```sh
+dotnet run --project tools/DeviceProfileCheck -- devices/xiaomi-rc003
+```
+
+`transport` 中的标识均为十进制整数，应来自实际设备信息。`vendorIdSource` 为 Bluetooth SIG 的 `1` 或 USB IF 的 `2`；`advertisedNames` 仅帮助发现，不能绕过实际型号与能力校验。省略 `transport` 仅兼容旧 RC003 配置，新型号必须填写。
+
 1. 运行 Windows 基线；macOS 运行 `swift test`。两端使用同一份型号文件。
 2. 在应用“设备与型号”中导入包；核对型号、图片和每个热点。
 3. 逐项测试按下/释放、重复报文、单击/双击/长按、松手停止语音、断开与重连。

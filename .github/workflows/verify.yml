@@ -19,6 +19,8 @@ jobs:
         run: ./Windows/scripts/test-baseline.ps1
       - name: Real MCP process
         run: python scripts/check-mcp.py --dotnet dotnet --helper Windows/src/VoiceAnything.Mcp/bin/Debug/net10.0/VoiceAnything.Mcp.dll
+      - name: Contributor profile check
+        run: dotnet run --project tools/DeviceProfileCheck -- devices/xiaomi-rc003
   macos:
     runs-on: macos-latest
     timeout-minutes: 20

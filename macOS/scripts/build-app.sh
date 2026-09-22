@@ -41,6 +41,7 @@ done
 iconutil -c icns "$iconset" -o "$app/Contents/Resources/AppIcon.icns"
 dotnet publish "$repo_root/Windows/src/VoiceAnything.Mcp/VoiceAnything.Mcp.csproj" \
   -c Release -r "$runtime" --self-contained true -p:PublishSingleFile=true \
+  -p:DebugType=None -p:DebugSymbols=false -p:IncludeNativeLibrariesForSelfExtract=true \
   -o "$app/Contents/Helpers"
 
 # Sign nested executables before their containers. Use a stable designated

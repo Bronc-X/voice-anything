@@ -9,6 +9,7 @@ struct VoiceAnythingDevicesView: View {
     @State private var controlID = ""
     @State private var gesture = "single"
     @State private var message = ""
+    @State private var editingShortcut = false
 
     private var selected: VAInstalledProfile? { devices.profiles.first { $0.id == selectedID } }
     private var control: VADeviceControl? { selected?.profile.controls.first { $0.id == controlID } }
@@ -54,13 +55,16 @@ struct VoiceAnythingDevicesView: View {
                                 }.pickerStyle(.segmented)
                                 Picker("动作", selection: Binding(
                                     get: { settings.configuredAction(for: button, trigger: trigger).action },
-                                    set: { settings.setAction($0, for: button, trigger: trigger) })) {
+                                    set: { settings.setAction($0, for: button, trigger: trigger); editingShortcut = $0 == .customShortcut })) {
                                     ForEach(ButtonAction.pickerActions(installedBundleIdentifiers: PresetApplication.installedBundleIdentifiers,
                                         current: settings.configuredAction(for: button, trigger: trigger).action,
-                                        experimentalContinuousRecordingEnabled: false).filter { $0 != .customShortcut && $0 != .openCustomApplication }, id: \.self) { action in
+                                        experimentalContinuousRecordingEnabled: false).filter { $0 != .openCustomApplication }, id: \.self) { action in
                                         Text(action.displayName(using: localization)).tag(action)
                                     }
                                 }.disabled(!isBound)
+                                if settings.configuredAction(for: button, trigger: trigger).action == .customShortcut {
+                                    Button("编辑快捷键") { editingShortcut = true }.disabled(!isBound)
+                                }
                                 Text(isBound ? "修改自动保存到当前设备。" : "先应用到当前设备，再配置按键动作。")
                                     .font(.caption).foregroundStyle(.secondary)
                             }
@@ -80,7 +84,19 @@ struct VoiceAnythingDevicesView: View {
             Text(message.isEmpty ? devices.status : message).font(.caption).foregroundStyle(.secondary)
         }.padding(28)
         .onAppear { selectedID = devices.profile(for: settings.selectedRemoteProfileID)?.id ?? devices.profiles.first?.id ?? "" }
-        .onChange(of: selectedID) { _ in controlID = ""; gesture = "single" }
+        .onChange(of: selectedID) { _, _ in controlID = ""; gesture = "single" }
+        .sheet(isPresented: $editingShortcut) {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("设置快捷键").font(.title2)
+                if let button = control?.button {
+                    KeyboardShortcutPicker(shortcut: settings.configuredAction(for: button, trigger: trigger).shortcut) { shortcut in
+                        settings.setShortcut(shortcut, for: button, trigger: trigger)
+                        editingShortcut = false
+                    }
+                }
+                Button("关闭") { editingShortcut = false }
+            }.padding(24).frame(width: 760, height: 570)
+        }
     }
     private func deviceCanvas(_ installed: VAInstalledProfile) -> some View {
         let profile = installed.profile

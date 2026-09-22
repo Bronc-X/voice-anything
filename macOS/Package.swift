@@ -85,9 +85,7 @@ let chromecasePackagePath = ProcessInfo.processInfo.environment[
     "SAYALL_CHROMECASE_PACKAGE_PATH"
 ]
 let chromecaseEnabled = !(chromecasePackagePath ?? "").isEmpty
-let macOSPlatform: SupportedPlatform = ProcessInfo.processInfo.environment["RELEASE_VARIANT"] == "intel"
-    ? .macOS(.v13)
-    : .macOS(.v14)
+let macOSPlatform: SupportedPlatform = .macOS(.v14)
 var remoteMicSwiftSettings: [SwiftSetting] = []
 if siriRemoteEnabled {
     remoteMicSwiftSettings.append(.define("SAYALL_SIRI_REMOTE_ENABLED"))

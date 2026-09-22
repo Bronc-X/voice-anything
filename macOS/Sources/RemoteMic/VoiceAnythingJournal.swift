@@ -10,7 +10,7 @@ struct VADay: Codable, Identifiable {
     var voiceSessions: Int64 = 0
     var id: String { date }
 }
-struct VAReflection: Codable, Identifiable {
+struct VAReflection: Codable, Identifiable, Equatable {
     let id: String
     let sessionId: String
     let startedAt: String
@@ -51,9 +51,12 @@ final class VoiceAnythingJournal: ObservableObject {
             .appendingPathComponent("Library/Application Support/VoiceAnything", isDirectory: true)
     }
     @Published private(set) var document = VAJournalDocument()
+    @Published private(set) var newestReflections: [VAReflection] = []
     @Published private(set) var status = "所有数据保存在本机"
     let directory: URL
     private let queue = DispatchQueue(label: "VoiceAnything.journal")
+    private var cachedReflections: [VAReflection] = []
+    private var sortedReflections: [VAReflection] = []
     private var url: URL { directory.appendingPathComponent("journal.json") }
 
     init(directory: URL = VoiceAnythingJournal.defaultDirectory) {
@@ -114,8 +117,18 @@ final class VoiceAnythingJournal: ObservableObject {
         return value
     }
     private func publish(_ value: VAJournalDocument?, error: Error? = nil) {
+        if let value, value.reflections != cachedReflections {
+            cachedReflections = value.reflections
+            let fractional = ISO8601DateFormatter()
+            fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            let whole = ISO8601DateFormatter()
+            sortedReflections = value.reflections.map { record in
+                (record, fractional.date(from: record.endedAt) ?? whole.date(from: record.endedAt) ?? .distantPast)
+            }.sorted { $0.1 == $1.1 ? $0.0.id < $1.0.id : $0.1 > $1.1 }.map { $0.0 }
+        }
+        let newest = sortedReflections
         DispatchQueue.main.async {
-            if let value { self.document = value }
+            if let value { self.document = value; self.newestReflections = newest }
             self.status = error.map { "未保存：\($0.localizedDescription)" } ?? "所有数据保存在本机"
         }
     }

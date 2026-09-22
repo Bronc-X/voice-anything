@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using SayAll.Core.Audio;
 using SayAll.Core.Devices;
@@ -19,12 +20,29 @@ public partial class DevicesWindow : Window
     public event Action<InstalledDeviceProfile>? Selected;
     private bool busy;
     private static string UserProfiles => Path.Combine(SayAll.Core.History.JournalStore.DefaultDirectory, "devices");
+    private static void ValidateArtwork(DeviceProfile profile, string directory)
+    {
+        if (profile.ResolveArtwork(directory) is not string path) return;
+        try
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.DecodePixelWidth = 1024;
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.UriSource = new Uri(path);
+            bitmap.EndInit();
+            if (bitmap.PixelWidth <= 0 || bitmap.PixelHeight <= 0) throw new InvalidDataException("型号图片为空。");
+        }
+        catch (Exception error) when (error is FormatException or NotSupportedException)
+        { throw new InvalidDataException("型号图片无法解码，请使用有效的 PNG 或 JPEG。", error); }
+    }
     public static IReadOnlyList<InstalledDeviceProfile> Profiles()
     {
         var profiles = DeviceProfileCatalog.LoadDirectory(Path.Combine(AppContext.BaseDirectory, "devices"))
             .Concat(DeviceProfileCatalog.LoadDirectory(UserProfiles)).ToArray();
         if (profiles.Select(item => item.Profile.Id).Distinct().Count() != profiles.Length)
             throw new InvalidDataException("内置型号与导入型号存在重复 ID，请移除重复包。");
+        foreach (var item in profiles) ValidateArtwork(item.Profile, item.Directory);
         return profiles;
     }
     public DevicesWindow()
@@ -121,6 +139,7 @@ public partial class DevicesWindow : Window
         try
         {
             var profile = DeviceProfile.Load(Path.Combine(dialog.FolderName, "profile.json"));
+            ValidateArtwork(profile, dialog.FolderName);
             if (Profiles().Any(item => item.Profile.Id == profile.Id)) throw new InvalidDataException("该型号 ID 已存在，未覆盖已有配置。");
             Directory.CreateDirectory(UserProfiles);
             temporary = Path.Combine(UserProfiles, ".import-" + Guid.NewGuid().ToString("N"));
@@ -132,6 +151,7 @@ public partial class DevicesWindow : Window
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
                 File.Copy(artwork, destination);
             }
+            _ = DeviceProfile.Load(Path.Combine(temporary, "profile.json"));
             Directory.Move(temporary, Path.Combine(UserProfiles, profile.Id));
             temporary = null;
             ProfileList.ItemsSource = Profiles();

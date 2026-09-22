@@ -32,15 +32,11 @@ struct VoiceAnythingInsightsView: View {
     }
     private var records: [VAReflection] {
         guard validDates else { return [] }
-        return journal.document.reflections.filter { record in
+        return journal.newestReflections.filter { record in
             (query.isEmpty || record.text.localizedCaseInsensitiveContains(query)) &&
             (application.isEmpty || record.application.caseInsensitiveCompare(application) == .orderedSame) &&
             (from.isEmpty || String(record.endedAt.prefix(10)) >= from) &&
             (through.isEmpty || String(record.endedAt.prefix(10)) <= through)
-        }.sorted {
-            let left = VoiceAnythingJournal.instant($0.endedAt) ?? .distantPast
-            let right = VoiceAnythingJournal.instant($1.endedAt) ?? .distantPast
-            return left == right ? $0.id < $1.id : left > right
         }
     }
     private var selection: VAReflection? { records.first { $0.id == selected } }
@@ -69,10 +65,11 @@ struct VoiceAnythingInsightsView: View {
         .padding(28)
         .onAppear { tab = initialTab; journal.reload() }
         .onDisappear { config = "" }
-        .onChange(of: query) { _ in page = 0; selected = nil }
-        .onChange(of: application) { _ in page = 0; selected = nil }
-        .onChange(of: from) { _ in page = 0; selected = nil }
-        .onChange(of: through) { _ in page = 0; selected = nil }
+        .onChange(of: query) { _, _ in page = 0; selected = nil }
+        .onChange(of: application) { _, _ in page = 0; selected = nil }
+        .onChange(of: from) { _, _ in page = 0; selected = nil }
+        .onChange(of: through) { _, _ in page = 0; selected = nil }
+        .onChange(of: journal.document.reflections.count) { _, _ in page = min(page, max(0, (records.count - 1) / 50)) }
         .alert("删除这条回眸？", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
             Button("取消", role: .cancel) { deleting = nil }
             Button("删除", role: .destructive) { if let deleting { journal.delete(id: deleting.id) }; deleting = nil; selected = nil }
