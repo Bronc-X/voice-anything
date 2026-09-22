@@ -19,6 +19,7 @@ public partial class DevicesWindow : Window
 {
     public event Action<InstalledDeviceProfile>? Selected;
     private bool busy;
+    private readonly CancellationTokenSource lifetime = new();
     private static string UserProfiles => Path.Combine(SayAll.Core.History.JournalStore.DefaultDirectory, "devices");
     private static void ValidateArtwork(DeviceProfile profile, string directory)
     {
@@ -48,6 +49,7 @@ public partial class DevicesWindow : Window
     public DevicesWindow()
     {
         InitializeComponent();
+        Closed += (_, _) => { lifetime.Cancel(); lifetime.Dispose(); };
         try { ProfileList.ItemsSource = Profiles(); ProfileList.SelectedIndex = 0; }
         catch (Exception error) when (error is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
         { StatusText.Text = "型号加载失败：" + error.Message; }
@@ -66,10 +68,13 @@ public partial class DevicesWindow : Window
         StatusText.Text = "正在扫描已配对的蓝牙设备…";
         try
         {
-            var devices = await DeviceInformation.FindAllAsync(BluetoothLEDevice.GetDeviceSelectorFromPairingState(true));
+            using var operation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+            operation.CancelAfter(TimeSpan.FromSeconds(15));
+            var devices = await DeviceInformation.FindAllAsync(BluetoothLEDevice.GetDeviceSelectorFromPairingState(true)).AsTask(operation.Token);
             DeviceList.ItemsSource = devices.ToArray();
             StatusText.Text = devices.Count == 0 ? "没有已配对的蓝牙设备。请先在系统设置中完成配对。" : $"找到 {devices.Count} 台已配对设备，请选择要使用的遥控器。";
         }
+        catch (OperationCanceledException) { StatusText.Text = "扫描已取消或超时，请确认蓝牙已开启后重试。"; }
         catch (Exception error) when (error is COMException or UnauthorizedAccessException)
         { StatusText.Text = "扫描失败：" + error.Message; }
         finally { busy = false; ConnectButton.IsEnabled = true; }
@@ -80,23 +85,27 @@ public partial class DevicesWindow : Window
         if (ProfileList.SelectedItem is not InstalledDeviceProfile profile || DeviceList.SelectedItem is not DeviceInformation information)
         { StatusText.Text = "请选择型号和一台已配对的设备。"; return; }
         busy = true; ConnectButton.IsEnabled = false; StatusText.Text = "正在读取实际型号与 ATVV 能力…";
+        ProfileList.IsEnabled = false; DeviceList.IsEnabled = false;
         try
         {
-            using var device = await BluetoothLEDevice.FromIdAsync(information.Id)
+            using var operation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+            operation.CancelAfter(TimeSpan.FromSeconds(30));
+            var cancellationToken = operation.Token;
+            using var device = await BluetoothLEDevice.FromIdAsync(information.Id).AsTask(cancellationToken)
                 ?? throw new InvalidOperationException("设备无法打开，请确认蓝牙连接。");
             if (!device.DeviceInformation.Pairing.IsPaired) throw new InvalidOperationException("设备尚未配对。");
-            var services = await device.GetGattServicesForUuidAsync(Guid.Parse("0000180a-0000-1000-8000-00805f9b34fb"), BluetoothCacheMode.Uncached);
+            var services = await device.GetGattServicesForUuidAsync(Guid.Parse("0000180a-0000-1000-8000-00805f9b34fb"), BluetoothCacheMode.Uncached).AsTask(cancellationToken);
             string? model = null;
             try
             {
                 if (services.Status != GattCommunicationStatus.Success) throw new InvalidOperationException("无法读取设备信息服务。");
                 foreach (var service in services.Services)
                 {
-                    var chars = await service.GetCharacteristicsForUuidAsync(Guid.Parse("00002a24-0000-1000-8000-00805f9b34fb"), BluetoothCacheMode.Uncached);
+                    var chars = await service.GetCharacteristicsForUuidAsync(Guid.Parse("00002a24-0000-1000-8000-00805f9b34fb"), BluetoothCacheMode.Uncached).AsTask(cancellationToken);
                     if (chars.Status != GattCommunicationStatus.Success) continue;
                     foreach (var characteristic in chars.Characteristics)
                     {
-                        var value = await characteristic.ReadValueAsync(BluetoothCacheMode.Uncached);
+                        var value = await characteristic.ReadValueAsync(BluetoothCacheMode.Uncached).AsTask(cancellationToken);
                         if (value.Status != GattCommunicationStatus.Success) continue;
                         using var reader = DataReader.FromBuffer(value.Value);
                         model = reader.ReadString(value.Value.Length).Trim('\0', ' ', '\r', '\n');
@@ -105,7 +114,7 @@ public partial class DevicesWindow : Window
             }
             finally { foreach (var service in services.Services) service.Dispose(); }
             if (model is null || !profile.Profile.MatchesModel(model)) throw new InvalidOperationException("实际型号与所选型号包不匹配，未更改当前连接。");
-            var audio = await device.GetGattServicesForUuidAsync(AtvvProtocol.ServiceUuid, BluetoothCacheMode.Uncached);
+            var audio = await device.GetGattServicesForUuidAsync(AtvvProtocol.ServiceUuid, BluetoothCacheMode.Uncached).AsTask(cancellationToken);
             try { if (audio.Status != GattCommunicationStatus.Success || audio.Services.Count != 1) throw new InvalidOperationException("未发现唯一 ATVV 语音服务。"); }
             finally { foreach (var service in audio.Services) service.Dispose(); }
             var selection = new SelectedRemote(profile.Profile.Id, device.BluetoothAddress.ToString("X12"),
@@ -117,10 +126,12 @@ public partial class DevicesWindow : Window
                 var capability = new TaskCompletionSource<AtvvCapabilities>(TaskCreationOptions.RunContinuationsAsynchronously);
                 probe.CapabilitiesReceived += value => capability.TrySetResult(value);
                 probe.Failed += error => capability.TrySetException(error);
-                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeout.CancelAfter(TimeSpan.FromSeconds(12));
                 await probe.ConnectAsync(timeout.Token, selection);
                 await capability.Task.WaitAsync(timeout.Token);
             }
+            cancellationToken.ThrowIfCancellationRequested();
             DeviceSelection.Save(selection);
             Selected?.Invoke(profile);
             StatusText.Text = "设备身份已保存，主窗口将连接所选设备。按键桥仍需通过当前驱动校验。";
@@ -128,7 +139,7 @@ public partial class DevicesWindow : Window
         catch (OperationCanceledException) { StatusText.Text = "读取设备能力超时。当前选择未改变，请唤醒遥控器后重试。"; }
         catch (Exception error) when (error is COMException or IOException or UnauthorizedAccessException or InvalidOperationException or System.Text.Json.JsonException)
         { StatusText.Text = "验证未完成：" + error.Message; }
-        finally { busy = false; ConnectButton.IsEnabled = true; }
+        finally { busy = false; ConnectButton.IsEnabled = true; ProfileList.IsEnabled = true; DeviceList.IsEnabled = true; }
     }
     private void Import_Click(object sender, RoutedEventArgs e)
     {

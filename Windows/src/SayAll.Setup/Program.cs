@@ -126,7 +126,8 @@ internal static class Program
             ?? throw new IOException("无法注册卸载入口。");
         var powershell = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
         key.SetValue("DisplayName", "Voice Anything");
-        key.SetValue("DisplayVersion", "0.1.0-dev");
+        key.SetValue("DisplayVersion", Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0] ?? "0.2.0-dev");
         key.SetValue("Publisher", "Voice Anything contributors");
         key.SetValue("InstallLocation", InstallRoot);
         key.SetValue("DisplayIcon", appExecutable);
