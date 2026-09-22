@@ -590,8 +590,8 @@ struct OnboardingFlowTests {
         #expect(rendererSource.contains("return \"control-method\""))
         #expect(rendererSource.contains("case .voiceTest, .controls, .complete:"))
         #expect(rendererSource.contains("DoubaoAudioDevicePolicy.deviceUID"))
-        #expect(buildSource.contains("$ROOT/Resources/Onboarding"))
-        #expect(verifySource.contains("Resources/Onboarding/*.png(N)"))
+        #expect(buildSource.contains("$mac_root/Resources/Onboarding"))
+        #expect(verifySource.contains("Resources/Onboarding"))
     }
 
     @Test func voiceTestReacquiresInputFocusAndRejectsManualKeyboardText() throws {

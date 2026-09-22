@@ -860,13 +860,21 @@ var weType = inputMethods.SingleOrDefault(profile =>
     profile.Id.Equals(
         "0804:{86598FB9-66A2-463E-B9C2-AEB906D477AD}{607FDF85-FCC8-4DBD-A365-41296F980C9C}",
         StringComparison.OrdinalIgnoreCase));
-if (weType is null || weType.DisplayName != "WeType" || weType.LanguageId != 0x0804)
+if (weType is not null && (weType.DisplayName != "WeType" || weType.LanguageId != 0x0804))
 {
     throw new InvalidOperationException(
         "SayAll must enumerate the WeType profile configured on this Windows account");
 }
 
-var parsedInputMethod = WindowsInputMethodProfile.Parse(weType.Id);
+// A clean Windows account may have no third-party IME installed. Verify the TSF
+// parser with a fixed public profile ID, and every profile actually returned by Windows.
+foreach (var method in inputMethods)
+{
+    var parsed = WindowsInputMethodProfile.Parse(method.Id);
+    if (parsed.TipClassId != method.TipClassId || parsed.ProfileId != method.ProfileId || parsed.LanguageId != method.LanguageId)
+        throw new InvalidOperationException("An enumerated TSF profile did not round-trip.");
+}
+var parsedInputMethod = WindowsInputMethodProfile.Parse("0804:{86598FB9-66A2-463E-B9C2-AEB906D477AD}{607FDF85-FCC8-4DBD-A365-41296F980C9C}");
 if (parsedInputMethod.TipClassId != Guid.Parse("86598FB9-66A2-463E-B9C2-AEB906D477AD") ||
     parsedInputMethod.ProfileId != Guid.Parse("607FDF85-FCC8-4DBD-A365-41296F980C9C"))
 {

@@ -37,3 +37,16 @@ jobs:
           python3 scripts/check-mcp.py --dotnet dotnet --helper Windows/src/VoiceAnything.Mcp/bin/Debug/net10.0/VoiceAnything.Mcp.dll
       - name: Build native application bundle
         run: bash macOS/scripts/build-app.sh
+      - name: Published MCP and native previews
+        run: |
+          app="$(cat artifacts/macos-app-path.txt)"
+          python3 scripts/check-mcp.py --native --helper "$app/Contents/Helpers/VoiceAnything.Mcp"
+          VOICE_ANYTHING_PREVIEW_DIR="$PWD/artifacts/macos-previews" "$app/Contents/MacOS/RemoteMic"
+          ditto -c -k --sequesterRsrc --keepParent "$app" artifacts/VoiceAnything-macOS-development.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-development-preview
+          retention-days: 7
+          path: |
+            artifacts/macos-previews/
+            artifacts/VoiceAnything-macOS-development.zip

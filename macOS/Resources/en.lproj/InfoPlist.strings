@@ -1,0 +1,3 @@
+"CFBundleDisplayName" = "SayAll";
+"CFBundleName" = "SayAll";
+"NSBluetoothAlwaysUsageDescription" = "Connect to the Xiaomi Bluetooth Remote 2 Pro to receive button and voice data.";

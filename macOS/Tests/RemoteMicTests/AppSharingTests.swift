@@ -8,13 +8,13 @@ struct AppSharingTests {
         let english = try components(AppShareLink.url(for: Locale(identifier: "en")))
 
         #expect(chinese.scheme == "https")
-        #expect(chinese.host == "sayall.app")
-        #expect(chinese.path == "/")
+        #expect(chinese.host == "github.com")
+        #expect(chinese.path == "/Bronc-X/voice-anything")
         #expect(chinese.queryItems == [URLQueryItem(name: "from", value: "mac_share")])
 
         #expect(english.scheme == "https")
-        #expect(english.host == "sayall.app")
-        #expect(english.path == "/en/")
+        #expect(english.host == "github.com")
+        #expect(english.path == "/Bronc-X/voice-anything")
         #expect(english.queryItems == [URLQueryItem(name: "from", value: "mac_share")])
     }
 

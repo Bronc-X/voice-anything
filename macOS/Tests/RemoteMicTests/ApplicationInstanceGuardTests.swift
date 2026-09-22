@@ -39,11 +39,11 @@ struct ApplicationInstanceGuardTests {
         }
     }
 
-    @Test func defaultLockUsesTheHistoricalApplicationSupportDirectory() throws {
+    @Test func defaultLockUsesTheForkApplicationSupportDirectory() throws {
         let lockURL = try #require(ApplicationInstanceGuard.defaultLockURL())
 
         #expect(lockURL.lastPathComponent == ".app-instance.lock")
-        #expect(lockURL.deletingLastPathComponent().lastPathComponent == "RemoteMic")
+        #expect(lockURL.deletingLastPathComponent().lastPathComponent == "VoiceAnything")
     }
 
     @Test func startupAcquiresTheAtomicLockBeforeInspectingRunningApplications() throws {

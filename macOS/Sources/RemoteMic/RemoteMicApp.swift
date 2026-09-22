@@ -89,6 +89,11 @@ enum RemoteMicApp {
     @MainActor
     static func main() {
         VoiceAnythingDevices.enabled = true
+        if let output = ProcessInfo.processInfo.environment["VOICE_ANYTHING_PREVIEW_DIR"] {
+            do { try VoiceAnythingNativePreviews.capture(to: URL(fileURLWithPath: output, isDirectory: true)) }
+            catch { fputs("Native preview failed: \(error)\n", stderr); exit(EXIT_FAILURE) }
+            return
+        }
         if let screenshotDirectory = ProcessInfo.processInfo.environment[
             "REMOTE_MIC_SETTINGS_SCREENSHOT_DIR"
         ] {

@@ -10,12 +10,12 @@ struct FeedbackLinkTests {
         ))
 
         #expect(components.scheme == "https")
-        #expect(components.host == "my.sayall.app")
-        #expect(components.path == "/api/guest-entry")
-        #expect(components.queryItems == [URLQueryItem(name: "source", value: "mac")])
+        #expect(components.host == "github.com")
+        #expect(components.path == "/Bronc-X/voice-anything/issues")
+        #expect(components.queryItems == nil)
 
         let forbiddenNames = ["code", "token", "device", "device_id", "deviceid"]
-        #expect(components.queryItems?.allSatisfy {
+        #expect((components.queryItems ?? []).allSatisfy {
             !forbiddenNames.contains($0.name.lowercased())
         } == true)
     }

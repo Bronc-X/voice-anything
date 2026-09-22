@@ -140,7 +140,7 @@ struct RemoteButtonsTests {
             ($0.displayName(using: localization), $0.bundleIdentifier)
         })
         #expect(mappings == [
-            localization.text("app.name"): "com.hd838a.RemoteMic",
+            localization.text("app.name"): "io.github.bronc-x.voice-anything",
             "Codex": "com.openai.codex",
             "Claude": "com.anthropic.claudefordesktop",
             "cmux": "com.cmuxterm.app",

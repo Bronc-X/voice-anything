@@ -19,6 +19,7 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Helpers"
 cp "$binary_dir/RemoteMic" "$app/Contents/MacOS/RemoteMic"
 cp "$mac_root/Resources/Info.plist" "$app/Contents/Info.plist"
 cp "$mac_root/Resources/"*.png "$app/Contents/Resources/"
+cp -R "$mac_root/Resources/en.lproj" "$mac_root/Resources/zh-Hans.lproj" "$mac_root/Resources/Onboarding" "$mac_root/Resources/CommonPhrases" "$app/Contents/Resources/"
 cp -R "$repo_root/devices" "$app/Contents/Resources/devices"
 cp "$repo_root/LICENSE.md" "$repo_root/THIRD_PARTY_NOTICES.md" "$app/Contents/Resources/"
 cp -R "$repo_root/docs/licenses" "$app/Contents/Resources/licenses"
@@ -26,7 +27,9 @@ cp -R "$repo_root/docs/licenses" "$app/Contents/Resources/licenses"
 framework="$(find .build/artifacts -type d -name Sparkle.framework -print -quit)"
 if [[ -z "$framework" ]]; then echo 'Sparkle framework was not produced by SwiftPM' >&2; exit 1; fi
 ditto "$framework" "$app/Contents/Frameworks/Sparkle.framework"
-install_name_tool -add_rpath '@executable_path/../Frameworks' "$app/Contents/MacOS/RemoteMic"
+if ! otool -l "$app/Contents/MacOS/RemoteMic" | grep -q '@executable_path/../Frameworks'; then
+  install_name_tool -add_rpath '@executable_path/../Frameworks' "$app/Contents/MacOS/RemoteMic"
+fi
 
 iconset="$output/VoiceAnything.iconset"
 mkdir -p "$iconset"
@@ -40,7 +43,16 @@ dotnet publish "$repo_root/Windows/src/VoiceAnything.Mcp/VoiceAnything.Mcp.cspro
   -c Release -r "$runtime" --self-contained true -p:PublishSingleFile=true \
   -o "$app/Contents/Helpers"
 
-# Local development signature only. A public release still needs signing, notarization and hardware acceptance.
-codesign --force --deep --sign - "$app"
-codesign --verify --deep --strict "$app"
+# Sign nested executables before their containers. Use a stable designated
+# requirement so local development rebuilds keep the same permission identity.
+sparkle="$app/Contents/Frameworks/Sparkle.framework/Versions/B"
+codesign --force --timestamp=none --sign - "$app/Contents/Helpers/VoiceAnything.Mcp"
+codesign --force --timestamp=none --sign - "$sparkle/XPCServices/Installer.xpc"
+codesign --force --timestamp=none --preserve-metadata=entitlements --sign - "$sparkle/XPCServices/Downloader.xpc"
+codesign --force --timestamp=none --sign - "$sparkle/Autoupdate"
+codesign --force --timestamp=none --sign - "$sparkle/Updater.app"
+codesign --force --timestamp=none --sign - "$app/Contents/Frameworks/Sparkle.framework"
+codesign --force --timestamp=none --sign - --requirements '=designated => identifier "io.github.bronc-x.voice-anything"' "$app"
+bash "$mac_root/scripts/verify-app.sh" "$app"
+printf '%s\n' "$app" > "$repo_root/artifacts/macos-app-path.txt"
 printf 'Development app: %s\n' "$app"

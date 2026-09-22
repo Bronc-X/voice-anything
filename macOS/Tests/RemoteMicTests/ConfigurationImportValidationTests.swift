@@ -474,14 +474,14 @@ struct ConfigurationImportValidationTests {
         #expect(settings.configurationImportNotice == nil)
     }
 
-    @Test func anUnknownButtonKeyIsReportedAndTheKnownOnesStillApply() throws {
+    @Test func anInvalidButtonKeyIsReportedAndTheValidOnesStillApply() throws {
         let source = try exportedConfiguration(
             applicationPath: "/Applications/Example Agent.app"
         )
         defer { source.cleanup() }
         var json = source.json
         var bindings = try #require(json["buttonBindings"] as? [String: Any])
-        bindings["moon"] = ButtonAction.commandQuit.rawValue
+        bindings["moon/../../"] = ButtonAction.commandQuit.rawValue
         json["buttonBindings"] = bindings
 
         let (settings, cleanup) = try isolatedSettings("unknownButton")
