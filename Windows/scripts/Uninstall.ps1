@@ -17,10 +17,15 @@ function Assert-InstallDirectory {
     if (-not (Test-Path -LiteralPath (Join-Path $installDirectory 'install-receipt.txt') -PathType Leaf)) {
         throw 'The Voice Anything installation receipt is missing.'
     }
-    $items = @((Get-Item -LiteralPath $installDirectory -Force)) + @(Get-ChildItem -LiteralPath $installDirectory -Recurse -Force)
-    foreach ($item in $items) {
+    $pending = New-Object 'System.Collections.Generic.Stack[string]'
+    $pending.Push($installDirectory)
+    while ($pending.Count -gt 0) {
+        $item = Get-Item -LiteralPath $pending.Pop() -Force
         if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
             throw 'The installation contains a redirected path. No files were removed.'
+        }
+        if ($item.PSIsContainer) {
+            foreach ($child in @(Get-ChildItem -LiteralPath $item.FullName -Force)) { $pending.Push($child.FullName) }
         }
     }
 }

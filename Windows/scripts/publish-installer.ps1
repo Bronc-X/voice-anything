@@ -56,7 +56,9 @@ Copy-Item -LiteralPath (Join-Path $repositoryRoot 'LICENSE.md') -Destination $Ou
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'THIRD_PARTY_NOTICES.md') -Destination $OutputDirectory
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'docs\licenses') -Destination (Join-Path $OutputDirectory 'licenses') -Recurse
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'docs\UPSTREAM-NOTICES.md') -Destination $OutputDirectory
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Uninstall.ps1') -Destination $OutputDirectory
+# Windows PowerShell 5.1 needs a BOM to preserve Chinese installer messages.
+[IO.File]::WriteAllText((Join-Path $OutputDirectory 'Uninstall.ps1'),
+    [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'Uninstall.ps1')), [Text.UTF8Encoding]::new($true))
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'LICENSE.md') -Destination $appOutput
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'THIRD_PARTY_NOTICES.md') -Destination $appOutput
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'docs\licenses') -Destination (Join-Path $appOutput 'licenses') -Recurse
