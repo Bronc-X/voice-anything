@@ -25,14 +25,14 @@ try {
     $uninstallScriptPath = $scriptFile
     New-Item -ItemType Junction -Path $junction -Target $outsideDirectory | Out-Null
     Assert-Rejected { Assert-InstallDirectory }
-    Remove-Item -LiteralPath $junction -Force
+    [IO.Directory]::Delete($junction, $false)
     Assert-InstallDirectory
     if ((Get-Content -LiteralPath (Join-Path $outsideDirectory 'sentinel.txt')).Trim() -ne 'retain') {
         throw 'Validation modified a path outside the installation.'
     }
     Write-Output 'PASS uninstaller rejects missing receipts, copied scripts and redirected directories without deleting user data'
 } finally {
-    if (Test-Path -LiteralPath $junction) { Remove-Item -LiteralPath $junction -Force }
+    if (Test-Path -LiteralPath $junction) { [IO.Directory]::Delete($junction, $false) }
     $resolvedFixture = [IO.Path]::GetFullPath($fixtureRoot)
     $allowedPrefix = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\VoiceAnything-UninstallTests-'
     if (-not $resolvedFixture.StartsWith($allowedPrefix, [StringComparison]::OrdinalIgnoreCase)) { throw 'Unexpected fixture path' }
