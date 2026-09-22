@@ -993,5 +993,5 @@
 "settings.corrupted.item.statistics" = "使用统计记录";
 "settings.corrupted.item.other" = "其他设置";
 
-"remote.device.model.compatible_atvv" = "兼容 ATVV 设备";
+"remote.device.model.compatible_atvv" = "可配置设备";
 "connection.error.model_not_supported" = "设备实际型号与已安装的型号包不符。";

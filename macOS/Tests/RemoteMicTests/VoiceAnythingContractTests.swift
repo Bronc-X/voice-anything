@@ -84,5 +84,7 @@ struct VoiceAnythingContractTests {
         let control = VADeviceControl(id: "CaptureNote", label: "笔记", usage: 0x123,
             x: 0.1, y: 0.1, width: 0.2, height: 0.2, gestures: ["single"])
         #expect(control.button == button)
+        #expect(HIDRemoteMonitor.shouldPromoteDiscoveryReport(usages: [0x123], declaredUsages: [0x123]))
+        #expect(!HIDRemoteMonitor.shouldPromoteDiscoveryReport(usages: [0x124], declaredUsages: [0x123]))
     }
 }

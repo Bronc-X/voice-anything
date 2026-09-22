@@ -4469,7 +4469,7 @@ final class BridgeAppModel: ObservableObject, XiaomiBluetoothBridgeDelegate {
         didIdentifyRemoteModel model: XiaomiRemoteModel
     ) {
         guard let profileID = remoteProfileID(for: bridge) else { return }
-        if let number = bridge.identifiedModelNumber { VoiceAnythingDevices.shared.didIdentify(model: number, deviceID: profileID) }
+        if let number = bridge.identifiedModelNumber { VoiceAnythingDevices.shared.didIdentify(model: number, deviceID: profileID, settings: settings) }
         settings.updateRemoteProfileModel(profileID, model: model)
         refreshRemoteDeviceNames(reason: .connection)
     }

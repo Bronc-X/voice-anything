@@ -163,13 +163,10 @@ final class VoiceAnythingDevices: ObservableObject {
             $0.caseInsensitiveCompare(name) == .orderedSame
         } == true }.count == 1
     }
-    func didIdentify(model: String, deviceID: UUID) {
+    func didIdentify(model: String, deviceID: UUID, settings: AppSettings) {
         identifiedModels[deviceID] = model
         guard let profile = matchingModel(model) else { return }
-        var values = bindings
-        values[deviceID.uuidString] = profile.id
-        UserDefaults.standard.set(values, forKey: "VoiceAnything.deviceProfiles")
-        objectWillChange.send()
+        bindMatchedHID(profile, to: deviceID, settings: settings)
     }
     var hidMatching: [[String: Int]] {
         guard Self.enabled else { return [] }
