@@ -44,6 +44,6 @@ internal static class Rc003RegistryLocator
 
         var selection = DeviceSelection.Read();
         return selection is null ? null :
-            Rc003TargetSelector.SelectForDevice(candidates, selection.BluetoothAddress);
+            Rc003TargetSelector.SelectForDevice(candidates, selection.BluetoothAddress, selection.HidHardwareToken);
     }
 }

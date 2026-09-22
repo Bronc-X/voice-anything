@@ -26,6 +26,13 @@ struct VADeviceCapabilities: Codable {
     let battery: Bool
     let touch: Bool
 }
+struct VADeviceTransport: Codable {
+    let vendorId: UInt16
+    let productId: UInt16
+    let productVersion: UInt16
+    let vendorIdSource: UInt8
+    let advertisedNames: [String]
+}
 struct VADeviceProfile: Codable, Identifiable {
     let schemaVersion: Int
     let id: String
@@ -37,6 +44,12 @@ struct VADeviceProfile: Codable, Identifiable {
     let capabilities: VADeviceCapabilities
     let controls: [VADeviceControl]
     let validation: [String: String]
+    let transport: VADeviceTransport?
+
+    func matchesModel(_ raw: String) -> Bool {
+        let model = raw.trimmingCharacters(in: .whitespacesAndNewlines.union(.controlCharacters))
+        return modelNumbers.contains { $0.caseInsensitiveCompare(model) == .orderedSame }
+    }
 
     func validate() throws {
         func matches(_ text: String, _ regex: String) -> Bool { text.range(of: regex, options: .regularExpression) != nil }
@@ -58,6 +71,12 @@ struct VADeviceProfile: Codable, Identifiable {
                   control.gestures.allSatisfy({ ["single", "double", "long", "voice"].contains($0) }) &&
                   (control.id == "Microphone" ? control.gestures == ["voice"] : !control.gestures.contains("voice"))
               }) else { throw VAStorageError.invalid }
+        if let transport {
+            guard transport.vendorId > 0, transport.productId > 0, [1, 2].contains(transport.vendorIdSource),
+                  (1...16).contains(transport.advertisedNames.count), transport.advertisedNames.allSatisfy({
+                      !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && $0.utf16.count <= 80
+                  }) else { throw VAStorageError.invalid }
+        }
     }
     func artworkURL(in directory: URL) throws -> URL? {
         guard let artwork else { return nil }
@@ -73,13 +92,17 @@ struct VADeviceProfile: Codable, Identifiable {
         guard try fileSize(url) <= 128 * 1024 else { throw VAStorageError.capacity }
         let data = try Data(contentsOf: url)
         // Reject misspelled fields just as the Windows parser does.
-        let allowed = Set(["schemaVersion", "id", "name", "adapter", "modelNumbers", "artwork", "aspectRatio", "capabilities", "controls", "validation"])
+        let allowed = Set(["schemaVersion", "id", "name", "adapter", "modelNumbers", "artwork", "aspectRatio", "capabilities", "controls", "validation", "transport"])
         guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any], Set(object.keys).isSubset(of: allowed),
               let capabilities = object["capabilities"] as? [String: Any],
               Set(capabilities.keys).isSubset(of: ["voice", "holdToTalk", "toggleVoice", "battery", "touch"]),
               let controls = object["controls"] as? [[String: Any]],
               controls.allSatisfy({ Set($0.keys).isSubset(of: ["id", "label", "usage", "x", "y", "width", "height", "gestures"]) })
         else { throw VAStorageError.invalid }
+        if let transport = object["transport"] as? [String: Any],
+           !Set(transport.keys).isSubset(of: ["vendorId", "productId", "productVersion", "vendorIdSource", "advertisedNames"]) {
+            throw VAStorageError.invalid
+        }
         let profile = try JSONDecoder().decode(VADeviceProfile.self, from: data)
         try profile.validate()
         if let image = try profile.artworkURL(in: directory) {
@@ -95,6 +118,9 @@ struct VAInstalledProfile: Identifiable {
     let profile: VADeviceProfile
     let directory: URL
     var id: String { profile.id }
+    var usageMap: [UInt16: RemoteButton] {
+        Dictionary(uniqueKeysWithValues: profile.controls.compactMap { control in control.button.map { (control.usage, $0) } })
+    }
 }
 
 final class VoiceAnythingDevices: ObservableObject {
@@ -104,6 +130,7 @@ final class VoiceAnythingDevices: ObservableObject {
     @Published private(set) var profiles: [VAInstalledProfile] = []
     @Published private(set) var status = ""
     private var bindings: [String: String] { (UserDefaults.standard.dictionary(forKey: "VoiceAnything.deviceProfiles") as? [String: String]) ?? [:] }
+    private var identifiedModels: [UUID: String] = [:]
     private var userDirectory: URL { VoiceAnythingJournal.defaultDirectory.appendingPathComponent("devices", isDirectory: true) }
     private init() { reload() }
     func reload() {
@@ -124,10 +151,62 @@ final class VoiceAnythingDevices: ObservableObject {
         guard Self.enabled, let deviceID, let id = bindings[deviceID.uuidString] else { return nil }
         return profiles.first { $0.id == id }
     }
+    func matchingModel(_ raw: String) -> VAInstalledProfile? {
+        guard Self.enabled else { return nil }
+        let matches = profiles.filter { $0.profile.matchesModel(raw) }
+        return matches.count == 1 ? matches[0] : nil
+    }
+    func recognizesAdvertisedName(_ raw: String?) -> Bool {
+        guard Self.enabled, let raw else { return false }
+        let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return profiles.filter { item in item.profile.transport?.advertisedNames.contains {
+            $0.caseInsensitiveCompare(name) == .orderedSame
+        } == true }.count == 1
+    }
+    func didIdentify(model: String, deviceID: UUID) {
+        identifiedModels[deviceID] = model
+        guard let profile = matchingModel(model) else { return }
+        var values = bindings
+        values[deviceID.uuidString] = profile.id
+        UserDefaults.standard.set(values, forKey: "VoiceAnything.deviceProfiles")
+        objectWillChange.send()
+    }
+    var hidMatching: [[String: Int]] {
+        guard Self.enabled else { return [] }
+        return profiles.compactMap { item in item.profile.transport.map {
+            ["VendorID": Int($0.vendorId), "ProductID": Int($0.productId), "VersionNumber": Int($0.productVersion)]
+        } }
+    }
+    func matchingHID(vendor: Int, product: Int, version: Int) -> VAInstalledProfile? {
+        guard Self.enabled else { return nil }
+        let matches = profiles.filter { item in
+            guard let value = item.profile.transport else { return false }
+            return Int(value.vendorId) == vendor && Int(value.productId) == product && Int(value.productVersion) == version
+        }
+        return matches.count == 1 ? matches[0] : nil
+    }
+    func bindMatchedHID(_ profile: VAInstalledProfile, to deviceID: UUID, settings: AppSettings) {
+        var values = bindings
+        let changed = values[deviceID.uuidString] != profile.id
+        values[deviceID.uuidString] = profile.id
+        UserDefaults.standard.set(values, forKey: "VoiceAnything.deviceProfiles")
+        if changed && profile.id != "xiaomi-rc003" {
+            let previous = settings.selectedRemoteProfileID
+            settings.selectRemoteProfile(deviceID)
+            for control in profile.profile.controls {
+                guard let button = control.button else { continue }
+                for trigger in [ButtonTrigger.singleClick, .doubleClick, .longPress] {
+                    settings.setAction(.disabled, for: button, trigger: trigger)
+                }
+            }
+            if let previous { settings.selectRemoteProfile(previous) }
+        }
+        objectWillChange.send()
+    }
     func bind(_ profile: VAInstalledProfile, to device: RemoteDeviceProfile) throws {
-        // The baseline macOS transport has explicit model admission; do not claim unknown hardware is verified.
         let models = VoiceRemoteCatalog.entries.first(where: { $0.model == device.model })?.disModelNumbers ?? []
-        guard profile.profile.modelNumbers.contains(where: { wanted in models.contains { $0.caseInsensitiveCompare(wanted) == .orderedSame } })
+        let observedModel = identifiedModels[device.id]
+        guard observedModel.map(profile.profile.matchesModel) ?? profile.profile.modelNumbers.contains(where: { wanted in models.contains { $0.caseInsensitiveCompare(wanted) == .orderedSame } })
         else { throw VAStorageError.invalid }
         var values = bindings
         values[device.id.uuidString] = profile.id

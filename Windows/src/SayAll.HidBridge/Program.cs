@@ -115,7 +115,7 @@ internal static class Program
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (DeviceSelection.Read() != selection ||
-                DeviceSelection.HidAddress(target.InstanceId) != selection.BluetoothAddress.ToUpperInvariant())
+                DeviceSelection.HidAddress(target.InstanceId, selection.HidHardwareToken) != selection.BluetoothAddress.ToUpperInvariant())
                 throw new InvalidOperationException("The selected remote changed; reconnecting.");
             WindowsInjection.InjectLibrary(target.HostPid, runtime.GadgetPath);
             log("gadget_injected", new { target.HostPid, attempt });

@@ -90,7 +90,10 @@ public partial class DevicesWindow : Window
             var audio = await device.GetGattServicesForUuidAsync(AtvvProtocol.ServiceUuid, BluetoothCacheMode.Uncached);
             try { if (audio.Status != GattCommunicationStatus.Success || audio.Services.Count != 1) throw new InvalidOperationException("未发现唯一 ATVV 语音服务。"); }
             finally { foreach (var service in audio.Services) service.Dispose(); }
-            var selection = new SelectedRemote(profile.Profile.Id, device.BluetoothAddress.ToString("X12"));
+            var selection = new SelectedRemote(profile.Profile.Id, device.BluetoothAddress.ToString("X12"),
+                profile.Profile.Transport?.HardwareToken ?? DeviceSelection.DefaultHardwareToken);
+            if (!Rc003PresenceProbe.GetState(selection).HidServicePresent)
+                throw new InvalidOperationException("设备的实际 HID 标识与型号包不符，未更改当前选择。");
             await using (var probe = new Rc003AtvvClient())
             {
                 var capability = new TaskCompletionSource<AtvvCapabilities>(TaskCreationOptions.RunContinuationsAsynchronously);

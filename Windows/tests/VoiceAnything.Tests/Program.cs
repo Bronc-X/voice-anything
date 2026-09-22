@@ -21,6 +21,10 @@ try
         JsonSerializer.Deserialize<RemoteButton>(JsonSerializer.Serialize(button)) == button,
         "custom hardware controls preserve ID through binding and persistence");
     Require(profile.MatchesModel("example-1") && !profile.MatchesModel("NOT-EXAMPLE-1"), "hardware models match exactly, never by substring");
+    var transport = new DeviceTransport(0x1234, 0x5678, 1, 2, ["Example remote"]);
+    (profile with { Transport = transport }).Validate();
+    Require(DeviceSelection.ValidHardwareToken(transport.HardwareToken), "hardware metadata produces a bounded exact HID identifier");
+    Throws(() => (profile with { Transport = transport with { VendorIdSource = 9 } }).Validate(), "unsupported HID identifier source rejected");
     Throws(() => (profile with { Controls = [profile.Controls[0], profile.Controls[0] with { Id = "Other" }] }).Validate(), "duplicate HID usages rejected");
     Throws(() => (profile with { Capabilities = new(false, false, false, true, false) }).Validate(), "unsupported capabilities cannot be advertised");
     Throws(() => (profile with { Artwork = "../outside.png" }).ResolveArtwork(root), "artwork cannot escape profile directory");
@@ -83,6 +87,12 @@ try
     static string Hid(string address) => $@"BTHLEDevice\{{00001812-0000-1000-8000-00805F9B34FB}}_Dev_VID&012717_PID&32b8_REV&00a4_{address}\9&TEST&0&0055";
     var candidates = new[] { new Rc003HostCandidate(Hid(addressA), 100), new Rc003HostCandidate(Hid(addressB), 200) };
     Require(Rc003TargetSelector.SelectForDevice(candidates, addressB)?.HostPid == 200, "second physical remote of same model can be selected");
+    var compatible = new Rc003HostCandidate(Hid(addressB).Replace(DeviceSelection.DefaultHardwareToken, transport.HardwareToken), 300);
+    Require(Rc003TargetSelector.SelectForDevice([compatible], addressB) is null &&
+        Rc003TargetSelector.SelectForDevice([compatible], addressB, transport.HardwareToken)?.HostPid == 300,
+        "other HID hardware requires its explicitly declared identifier and selected physical address");
+    Require(DeviceSelection.HidAddress(compatible.InstanceId.Replace("00001812", "0000180F"), transport.HardwareToken) is null,
+        "matching vendor and address cannot bypass the HID service boundary");
     Require(DeviceSelection.MatchesPhysical($@"BTHLE\DEV_{addressB}\instance", addressB) &&
         !DeviceSelection.MatchesPhysical($@"BTHLE\DEV_{addressA}\instance", addressB), "physical presence follows selected identity");
     Require(Rc003TargetSelector.SelectForDevice(candidates, "66778899AABB") is null &&

@@ -86,6 +86,10 @@ final class HIDRemoteMonitor {
     private var activeDevice: IOHIDDevice?
     private var probedDevices: [IOHIDDevice] = []
     private(set) var deviceFingerprint: String?
+    private(set) var discoveredDeviceProfile: VAInstalledProfile?
+    private var inputUsageMap: [UInt16: RemoteButton] {
+        VoiceAnythingDevices.shared.profile(for: profileID)?.usageMap ?? discoveredDeviceProfile?.usageMap ?? RemoteButton.usageMap
+    }
     private(set) var profileID: UUID?
     private var activeDeviceIsSeized = false
     private var activeUsages = Set<UInt16>()
@@ -225,8 +229,8 @@ final class HIDRemoteMonitor {
         let matching = [
             kIOHIDVendorIDKey as String: 0x2717,
             kIOHIDProductIDKey as String: 0x32B8,
-        ] as CFDictionary
-        IOHIDManagerSetDeviceMatching(manager, matching)
+        ]
+        IOHIDManagerSetDeviceMatchingMultiple(manager, ([matching] + VoiceAnythingDevices.shared.hidMatching) as CFArray)
 
         let context = Unmanaged.passUnretained(self).toOpaque()
         IOHIDManagerRegisterDeviceMatchingCallback(manager, hidDeviceMatched, context)
@@ -501,11 +505,16 @@ final class HIDRemoteMonitor {
             return
         }
         let discoveryUsages: Set<UInt16>?
+        if deviceFingerprint == nil {
+            func number(_ key: String) -> Int { (IOHIDDeviceGetProperty(device, key as CFString) as? NSNumber)?.intValue ?? -1 }
+            discoveredDeviceProfile = VoiceAnythingDevices.shared.matchingHID(
+                vendor: number(kIOHIDVendorIDKey), product: number(kIOHIDProductIDKey), version: number(kIOHIDVersionNumberKey))
+        }
         if deviceFingerprint == nil, targetFingerprint == nil {
             guard let usages = parsedUsages(reportID: reportID, data: data, source: "device") else {
                 return
             }
-            guard Self.shouldPromoteDiscoveryReport(usages: usages) else {
+            guard Self.shouldPromoteDiscoveryReport(usages: usages, declaredUsages: discoveredDeviceProfile.map { Set($0.usageMap.keys) }) else {
                 diagnosticLogger(
                     "HID REPORT deferred reason=discovery_no_known_button source=device " +
                         "id=\(reportID) bytes=\(data.count) usage_count=\(usages.count)"
@@ -637,10 +646,10 @@ final class HIDRemoteMonitor {
             )
         }
         activeUsages = usages
-        onActiveButtons?(profileID, RemoteButton.buttons(for: usages, profileID: profileID))
+        onActiveButtons?(profileID, Set(usages.compactMap { inputUsageMap[$0] }))
 
         for usage in pressed.sorted() {
-            guard let button = RemoteButton.usageMap(for: profileID)[usage] else { continue }
+            guard let button = inputUsageMap[usage] else { continue }
             let preflightProfileID = profileID
             let preflightRecognizesDoubleClick = settings.configuredAction(
                 for: button,
@@ -772,11 +781,11 @@ final class HIDRemoteMonitor {
         for usage in released {
             let usedNativePassthrough = nativePassthroughUsages.remove(usage) != nil
             if !activeDeviceIsSeized, !usedNativePassthrough,
-               let button = RemoteButton.usageMap(for: profileID)[usage] {
+               let button = inputUsageMap[usage] {
                 eventSuppressor.arm(button: button, edge: .up)
             }
             repeatTimers.removeValue(forKey: usage)?.cancel()
-            if let button = RemoteButton.usageMap(for: profileID)[usage] {
+            if let button = inputUsageMap[usage] {
                 scheduleNonRepeatableRelease(for: button)
                 guard processGestureCommands(gestureRecognizer.release(button)) else { return }
             }
@@ -786,7 +795,7 @@ final class HIDRemoteMonitor {
     private func processBackOnly(usages: Set<UInt16>) {
         let pressed = usages.subtracting(activeUsages)
         activeUsages = usages
-        onActiveButtons?(profileID, RemoteButton.buttons(for: usages, profileID: profileID))
+        onActiveButtons?(profileID, Set(usages.compactMap { inputUsageMap[$0] }))
         guard pressed.contains(RemoteButton.back.hidUsage) else { return }
         let configured = ConfiguredButtonAction(action: .deleteBackward, shortcut: nil)
         guard actionPerformer(.back, .singleClick, configured) else {
@@ -866,8 +875,9 @@ final class HIDRemoteMonitor {
         return .probe
     }
 
-    static func shouldPromoteDiscoveryReport(usages: Set<UInt16>) -> Bool {
-        !RemoteButton.buttons(for: usages).isEmpty
+    static func shouldPromoteDiscoveryReport(usages: Set<UInt16>, declaredUsages: Set<UInt16>? = nil) -> Bool {
+        if let declaredUsages { return !usages.isDisjoint(with: declaredUsages) }
+        return !RemoteButton.buttons(for: usages).isEmpty
     }
 
     static func deviceOpenFailureMessageKey(
@@ -1260,7 +1270,7 @@ final class HIDRemoteMonitor {
         appSwitcherOriginBundleIdentifier = nil
         if !activeDeviceIsSeized {
             for usage in activeUsages {
-                if let button = RemoteButton.usageMap(for: profileID)[usage] {
+                if let button = inputUsageMap[usage] {
                     eventSuppressor.arm(button: button, edge: .up)
                 }
             }

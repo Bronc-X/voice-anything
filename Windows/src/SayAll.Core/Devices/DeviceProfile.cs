@@ -6,9 +6,15 @@ namespace SayAll.Core.Devices;
 public sealed record DeviceControl(string Id, string Label, ushort Usage, double X, double Y,
     double Width, double Height, string[] Gestures);
 public sealed record DeviceCapabilities(bool Voice, bool HoldToTalk, bool ToggleVoice, bool Battery, bool Touch);
+public sealed record DeviceTransport(ushort VendorId, ushort ProductId, ushort ProductVersion,
+    byte VendorIdSource, string[] AdvertisedNames)
+{
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string HardwareToken => $"Dev_VID&{VendorIdSource:X2}{VendorId:X4}_PID&{ProductId:X4}_REV&{ProductVersion:X4}_";
+}
 public sealed record DeviceProfile(int SchemaVersion, string Id, string Name, string Adapter,
     string[] ModelNumbers, string? Artwork, double AspectRatio, DeviceCapabilities Capabilities,
-    DeviceControl[] Controls, Dictionary<string, string> Validation)
+    DeviceControl[] Controls, Dictionary<string, string> Validation, DeviceTransport? Transport = null)
 {
     public static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -60,6 +66,11 @@ public sealed record DeviceProfile(int SchemaVersion, string Id, string Name, st
         if (Capabilities.ToggleVoice || Capabilities.Touch || Capabilities.Battery ||
             (Capabilities.Voice && !Capabilities.HoldToTalk))
             throw new InvalidDataException("当前适配器尚不支持切换收音或触摸，请使用相应的新适配器。");
+        if (Transport is { } transport && (transport.VendorId == 0 || transport.ProductId == 0 ||
+            transport.VendorIdSource is not (1 or 2) || transport.AdvertisedNames is null ||
+            transport.AdvertisedNames.Length is < 1 or > 16 || transport.AdvertisedNames.Any(name =>
+                string.IsNullOrWhiteSpace(name) || name.Length > 80)))
+            throw new InvalidDataException("传输层设备标识无效，请填写实际读取的 HID 标识和广播名。");
     }
 
     public string? ResolveArtwork(string directory)

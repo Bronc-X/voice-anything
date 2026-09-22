@@ -26,10 +26,14 @@ internal static class Rc003PresenceProbe
 
     public static Rc003PresenceState GetState()
     {
-        var selection = DeviceSelection.Read();
+        return GetState(DeviceSelection.Read());
+    }
+
+    public static Rc003PresenceState GetState(SelectedRemote? selection)
+    {
         if (selection is null) return new(false, false, null);
         var bluetoothConnected = IsPhysicalDevicePresent(selection.BluetoothAddress);
-        var (hidServicePresent, hostPid) = ReadHidServiceState(selection.BluetoothAddress);
+        var (hidServicePresent, hostPid) = ReadHidServiceState(selection.BluetoothAddress, selection.HidHardwareToken);
         return new Rc003PresenceState(bluetoothConnected, hidServicePresent, hostPid);
     }
 
@@ -83,7 +87,7 @@ internal static class Rc003PresenceProbe
         }
     }
 
-    private static (bool IsPresent, int? HostPid) ReadHidServiceState(string selectedAddress)
+    private static (bool IsPresent, int? HostPid) ReadHidServiceState(string selectedAddress, string hardwareToken)
     {
         using var root = Registry.LocalMachine.OpenSubKey(BluetoothLeDevicesKey);
         if (root is null)
@@ -103,7 +107,7 @@ internal static class Rc003PresenceProbe
             foreach (var instanceName in service.GetSubKeyNames())
             {
                 var instanceId = $@"BTHLEDevice\{serviceName}\{instanceName}";
-                if (!string.Equals(DeviceSelection.HidAddress(instanceId), selectedAddress,
+                if (!string.Equals(DeviceSelection.HidAddress(instanceId, hardwareToken), selectedAddress,
                         StringComparison.OrdinalIgnoreCase))
                 {
                     continue;

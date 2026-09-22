@@ -5,11 +5,12 @@ public sealed record Rc003HostCandidate(string InstanceId, int HostPid);
 public static class Rc003TargetSelector
 {
     public static Rc003HostCandidate? SelectForDevice(
-        IReadOnlyList<Rc003HostCandidate> candidates, string address)
+        IReadOnlyList<Rc003HostCandidate> candidates, string address,
+        string hardwareToken = DeviceSelection.DefaultHardwareToken)
     {
         if (!DeviceSelection.ValidAddress(address)) return null;
         var matching = candidates.Where(candidate => candidate.HostPid > 0 &&
-            string.Equals(DeviceSelection.HidAddress(candidate.InstanceId), address,
+            string.Equals(DeviceSelection.HidAddress(candidate.InstanceId, hardwareToken), address,
                 StringComparison.OrdinalIgnoreCase)).ToArray();
         if (matching.Length != 1) return null;
         // The capture hook covers the host. A shared host can mix unrelated HID reports.

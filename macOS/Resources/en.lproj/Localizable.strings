@@ -992,3 +992,6 @@
 "settings.corrupted.item.remote_device" = "remote device profiles";
 "settings.corrupted.item.statistics" = "usage statistics";
 "settings.corrupted.item.other" = "other settings";
+
+"remote.device.model.compatible_atvv" = "Compatible ATVV controller";
+"connection.error.model_not_supported" = "The reported device model does not match an installed profile.";

@@ -2112,7 +2112,7 @@ struct SettingsView: View {
     }
 
     private func remoteModelName(_ profile: RemoteDeviceProfile) -> String {
-        localization.text(profile.displayNameFallbackKey)
+        VoiceAnythingDevices.shared.profile(for: profile.id)?.profile.name ?? localization.text(profile.displayNameFallbackKey)
     }
 
     private func remoteSystemName(_ profile: RemoteDeviceProfile) -> String {

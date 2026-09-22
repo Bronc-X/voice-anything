@@ -128,6 +128,7 @@ final class XiaomiBluetoothBridge: NSObject {
     private var initializationTimeoutWorkItem: DispatchWorkItem?
     private var capabilitiesRequested = false
     private var capabilitiesConfirmed = false
+    private(set) var identifiedModelNumber: String?
     private var requestedReconnectDelay: TimeInterval?
     private var reconnectPolicy = BluetoothReconnectPolicy()
     private var currentAttemptUsesCachedTarget = false
@@ -402,6 +403,12 @@ final class XiaomiBluetoothBridge: NSObject {
         advertisedName: String?,
         usesCachedTarget: Bool = false
     ) -> Bool {
+        if advertisesVoiceService,
+           (targetIdentifier == nil || targetIdentifier == candidate.identifier),
+           VoiceAnythingDevices.shared.recognizesAdvertisedName(advertisedName ?? candidate.name) {
+            connect(candidate, using: central, generation: generation, source: source, usesCachedTarget: usesCachedTarget)
+            return true
+        }
         let decision = VoiceRemoteAdmission.decide(
             identifier: candidate.identifier,
             targetIdentifier: targetIdentifier,
@@ -480,6 +487,7 @@ final class XiaomiBluetoothBridge: NSObject {
         initializationTimeoutWorkItem = nil
         capabilitiesRequested = false
         capabilitiesConfirmed = false
+        identifiedModelNumber = nil
         capabilities = Self.defaultCapabilities
         currentAttemptUsesCachedTarget = false
         resetSession()
@@ -658,20 +666,13 @@ final class XiaomiBluetoothBridge: NSObject {
             AppLogger.shared.write(
                 "ATVV CAPS version=\(parsed.version) codec=\(parsed.selectedCodec) frame=\(parsed.frameSize)"
             )
-            if !ATVVProtocol.supportsAudio(sampleRate: parsed.sampleRate) {
+            if !ATVVProtocol.supportsAudio(sampleRate: parsed.sampleRate) || parsed.selectedCodec != 0x02 ||
+                parsed.version > 0x0100 || !(1...4096).contains(parsed.frameSize) {
                 rejectUnsupportedAudio(LocalizedMessage("connection.error.unsupported_16khz_codec"))
                 return
             }
             capabilitiesConfirmed = true
-            initializationTimeoutWorkItem?.cancel()
-            initializationTimeoutWorkItem = nil
-            reconnectPolicy.reset()
-            currentAttemptUsesCachedTarget = false
-            lifecycle = .ready(generation)
-            if let peripheral {
-                state = .ready(peripheral.name ?? "MI RC")
-                AppLogger.shared.write("BLE READY name=\(peripheral.name ?? "MI RC")")
-            }
+            finishVerifiedInitialization(generation: generation)
         case 0x08:
             guard requestMicrophoneOpen() else {
                 AppLogger.shared.write("ATVV MIC_OPEN remote_request_ignored")
@@ -738,6 +739,20 @@ final class XiaomiBluetoothBridge: NSObject {
             accumulator.reset()
         default:
             break
+        }
+    }
+
+    private func finishVerifiedInitialization(generation: UInt64) {
+        guard capabilitiesConfirmed, lifecycle == .awaitingCapabilities(generation),
+              !VoiceAnythingDevices.enabled || identifiedModelNumber != nil else { return }
+        initializationTimeoutWorkItem?.cancel()
+        initializationTimeoutWorkItem = nil
+        reconnectPolicy.reset()
+        currentAttemptUsesCachedTarget = false
+        lifecycle = .ready(generation)
+        if let peripheral {
+            state = .ready(peripheral.name ?? "ATVV")
+            AppLogger.shared.write("BLE READY name=\(peripheral.name ?? "ATVV")")
         }
     }
 
@@ -1312,14 +1327,17 @@ extension XiaomiBluetoothBridge {
             }
             guard let model = XiaomiRemoteModel.identified(by: modelNumber) else {
                 AppLogger.shared.write("BLE MODEL unrecognized modelNumber=\(normalizedModelNumber)")
+                if VoiceAnythingDevices.enabled { failInitialization(LocalizedMessage("connection.error.model_not_supported")) }
                 return
             }
+            identifiedModelNumber = modelNumber
             // 原始型号串必须一起记：广播名与型号**不是**一一对应（本机这台广播名是
             // 「小米蓝牙语音遥控器」，DIS 报的却是 RC003），只有原始串能支撑型号目录。
             AppLogger.shared.write(
                 "BLE MODEL identified=\(model.rawValue) modelNumber=\(normalizedModelNumber)"
             )
             delegate?.bluetoothBridge(self, didIdentifyRemoteModel: model)
+            finishVerifiedInitialization(generation: generation)
             return
         }
         if characteristic.uuid == controlUUID {

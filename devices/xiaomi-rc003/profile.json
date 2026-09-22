@@ -201,5 +201,18 @@
   "validation": {
     "windows": "candidate",
     "macos": "candidate"
+  },
+  "transport": {
+    "vendorId": 10007,
+    "productId": 12984,
+    "productVersion": 164,
+    "vendorIdSource": 1,
+    "advertisedNames": [
+      "MI RC",
+      "小米蓝牙语音遥控器",
+      "小米蓝牙遥控器2 pro",
+      "Xiaomi Bluetooth Remote 2 Pro",
+      "ARN9"
+    ]
   }
 }

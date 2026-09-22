@@ -4,7 +4,7 @@
 
 ## 已有适配器
 
-`xiaomi-atvv-v1` 目前接收 ATVV v0/v1 的 16 kHz ADPCM 音频与 HID 按键。Windows 按键桥还要求匹配现有 VID / PID / Revision、Windows 驱动指纹及唯一 WUDFHost。macOS 的当前发现链路仍受 RC001 / RC003 型号准入限制。新型号如果不符合这些条件，需要同时贡献适配器代码；不能只添加 JSON 并标为已支持。
+`xiaomi-atvv-v1` 接收 ATVV v0/v1 的 16 kHz ADPCM 音频与已有 HID 报告格式。`transport` 描述设备实际的 VID、PID、Revision 和广播名，两端共享。Windows 按键桥同时验证所选设备地址、声明的 HID 标识、Windows 驱动指纹及唯一 WUDFHost；macOS 根据声明发现设备，核对实际 DIS 型号及音频能力后才就绪。不同音频编码、HID 报告格式或系统驱动需要新的适配器代码；不能只改 JSON 并标为已支持。
 
 型号包放在 `devices/<id>/`，包含 `profile.json` 及可选的本地 PNG/JPEG。参考 [RC003](devices/xiaomi-rc003/profile.json)。
 
@@ -17,6 +17,7 @@
   "modelNumbers": ["EXAMPLE-1"],
   "artwork": null,
   "aspectRatio": 0.5,
+  "transport": {"vendorId": 4660, "productId": 22136, "productVersion": 1, "vendorIdSource": 2, "advertisedNames": ["Example remote"]},
   "capabilities": {"voice": false, "holdToTalk": false, "toggleVoice": false, "battery": false, "touch": false},
   "controls": [{"id": "CaptureNote", "label": "记笔记", "usage": 291, "x": 0.1, "y": 0.1, "width": 0.2, "height": 0.1, "gestures": ["single", "long"]}],
   "validation": {"windows": "research", "macos": "research"}

@@ -53,6 +53,8 @@ struct VoiceRemoteCatalogTests {
         #expect(XiaomiRemoteModel.identified(by: "RC001") == .rc001)
         #expect(XiaomiRemoteModel.identified(by: "RC003") == .rc003)
         #expect(XiaomiRemoteModel.identified(by: " rc003 ") == .rc003)
+        #expect(XiaomiRemoteModel.identified(by: "RC003MS") == .rc003)
+        #expect(XiaomiRemoteModel.identified(by: "OTHER-RC003") == nil)
         // ARN9 从未在任何真机上出现过（历史日志 0 次），归属无证据 → 不映射型号。
         // 型号不回写只影响展示名；连接（广播名白名单含 "arn9"）与音频解码
         // （桥里独立的 ADPCM 字节序检测）都不受影响。

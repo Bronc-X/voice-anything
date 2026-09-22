@@ -3,6 +3,7 @@ import Foundation
 enum XiaomiRemoteModel: String, Codable, CaseIterable, Identifiable {
     case rc001
     case rc003
+    case compatibleATVV = "compatible_atvv"
     case appleSiriRemoteA2854 = "apple_siri_remote_a2854"
     case appleSiriRemoteA2540 = "apple_siri_remote_a2540"
     /// Chromecase（Google Chromecast 语音遥控器）。与苹果遥控器同理，case 始终存在以保证
@@ -16,6 +17,7 @@ enum XiaomiRemoteModel: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .rc001: return "remote.device.model.rc001"
         case .rc003: return "remote.device.model.rc003"
+        case .compatibleATVV: return "remote.device.model.compatible_atvv"
         case .appleSiriRemoteA2854:
 #if SAYALL_SIRI_REMOTE_ENABLED
             return "remote.device.model.apple_siri_remote_a2854"
@@ -42,6 +44,7 @@ enum XiaomiRemoteModel: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .rc001: "xiaomi-remote-rc001"
         case .rc003: "xiaomi-remote-2-pro"
+        case .compatibleATVV: nil
         case .appleSiriRemoteA2854: "apple-siri-remote-a2854"
         case .appleSiriRemoteA2540: "apple-siri-remote-a2540"
         case .chromecaseVoiceRemote: "chromecast-voice-remote"
@@ -66,7 +69,8 @@ enum XiaomiRemoteModel: String, Codable, CaseIterable, Identifiable {
 
     /// 按 DIS 型号串识别型号。规则集中在 `VoiceRemoteCatalog`——这里不再单独写名单。
     static func identified(by modelNumber: String) -> XiaomiRemoteModel? {
-        VoiceRemoteCatalog.entry(matchingDISModelNumber: modelNumber)?.model
+        VoiceRemoteCatalog.entry(matchingDISModelNumber: modelNumber)?.model ??
+            (VoiceAnythingDevices.shared.matchingModel(modelNumber) == nil ? nil : .compatibleATVV)
     }}
 
 /// 目录条目：一款被验证过的遥控器。
@@ -106,7 +110,7 @@ enum VoiceRemoteCatalog {
             // 但 ARN9 的两处功能保留：①广播名白名单里的 "arn9"（连接层，老固件设备
             // 可能广播这个名字）；②桥里 contains("ARN9") 的 ADPCM low-nibble-first
             // 翻转（解码层，见 ATVVProtocol.lowNibbleFirst）——两者都不依赖型号归属。
-            disModelNumbers: ["RC003"]
+            disModelNumbers: ["RC003", "RC003MS"]
         ),
     ]
 
@@ -127,13 +131,13 @@ enum VoiceRemoteCatalog {
         "arn9",
     ]
 
-    /// 按 DIS 型号串识别型号。`raw` 是设备上报的原始串，子串命中即认——
+    /// 按 DIS 型号串精确匹配，避免将同前缀的其他设备误认作已支持型号。
     /// 只有目录里登记的型号串才会命中，登记之外的（如 ARN9）返回 nil，型号不猜。
     static func entry(matchingDISModelNumber raw: String) -> VoiceRemoteCatalogEntry? {
         let normalized = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         guard !normalized.isEmpty else { return nil }
         return entries.first { entry in
-            entry.disModelNumbers.contains { normalized.contains($0) }
+            entry.disModelNumbers.contains { normalized == $0 }
         }
     }
 

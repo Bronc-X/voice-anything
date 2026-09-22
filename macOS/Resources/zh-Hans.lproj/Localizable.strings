@@ -159,7 +159,7 @@
 "trigger.single_click" = "单击";
 "trigger.double_click" = "双击";
 "trigger.long_press" = "长按";
-"app.name" = "无线麦";
+"app.name" = "Voice Anything";
 "macro.integration.focus_mcp_boundary" = "“学习输入框”只负责把光标放到目标 App 的输入位置；“回眸”中的 Codex MCP / TOML 只负责授权读取本地历史，两者互不替代。";
 "application.wechat" = "微信";
 "application.wecom" = "企业微信";
@@ -992,3 +992,6 @@
 "settings.corrupted.item.remote_device" = "遥控器设备配置";
 "settings.corrupted.item.statistics" = "使用统计记录";
 "settings.corrupted.item.other" = "其他设置";
+
+"remote.device.model.compatible_atvv" = "兼容 ATVV 设备";
+"connection.error.model_not_supported" = "设备实际型号与已安装的型号包不符。";

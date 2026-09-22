@@ -114,6 +114,8 @@ enum RemoteDeviceNamePolicy {
             return commonNames.contains(lowercased) || modelNames.contains(lowercased)
         case .chromecaseVoiceRemote:
             return ["chromecase 遥控器", "chromecase remote"].contains(lowercased)
+        case .compatibleATVV:
+            return false
         case .unknown:
             // 小米发现阶段可能先读到名称、后读到型号；沿用已有发现白名单。
             return XiaomiVoiceRemoteNameMatcher.matches(name)
