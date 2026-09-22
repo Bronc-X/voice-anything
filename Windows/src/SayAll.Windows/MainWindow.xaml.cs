@@ -420,7 +420,7 @@ public partial class MainWindow : Window
         using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         _audioConnectionCancellation = cancellation;
         AudioRetryButton.IsEnabled = false;
-        AudioStatusText.Text = "正在连接本机录音链路…";
+        AudioStatusText.Text = "正在连接本机录音设备…";
         VoiceTestDetail.Text = "连接完成后，按住麦克风键说话";
         try
         {
@@ -482,7 +482,7 @@ public partial class MainWindow : Window
             _capabilities.AudioReady = SayAll.Core.Audio.AtvvProtocol.SupportsAudio(
                 capabilities.SampleRate);
             AudioStatusText.Text =
-                $"语音链路已就绪 · {capabilities.SampleRate / 1000:0} kHz · 帧长 {capabilities.FrameSize}";
+                $"语音连接已就绪 · {capabilities.SampleRate / 1000:0} kHz · 帧长 {capabilities.FrameSize}";
             AudioStatusDot.Background = FindBrush("SuccessBrush");
             VoiceTestDetail.Text = "按住麦克风键说话，松开后结束";
             AudioRetryButton.IsEnabled = false;
@@ -764,7 +764,7 @@ public partial class MainWindow : Window
     {
         Dispatcher.Invoke(() =>
         {
-            AudioStatusText.Text = $"语音链路错误：{exception.Message}";
+            AudioStatusText.Text = $"语音连接出错：{exception.Message}";
             AudioStatusDot.Background = FindBrush("PendingBrush");
             AudioRetryButton.IsEnabled = true;
             VoiceTestDetail.Text = "远程音频未连接；松开录音键后请重试";

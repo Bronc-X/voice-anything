@@ -61,7 +61,7 @@
                     <Button Content="设备与型号" Click="OpenDevices_Click" Margin="0,0,10,0" />
                     <Button Content="统计 · 回眸 · Agent" Click="OpenHistory_Click" />
                 </StackPanel>
-                <StackPanel><TextBlock Text="Voice Anything" FontSize="18" FontWeight="SemiBold"/><TextBlock x:Name="HistoryStatusText" Text="你的硬件，你的操作方式" FontSize="12" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,3,12,0" TextTrimming="CharacterEllipsis"/></StackPanel>
+                <StackPanel><TextBlock Text="Voice Anything" FontSize="18" FontWeight="SemiBold"/><TextBlock x:Name="HistoryStatusText" Text="先连接设备，再设置按键" FontSize="12" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,3,12,0" TextTrimming="CharacterEllipsis"/></StackPanel>
             </DockPanel>
         </Border>
     <Grid>
@@ -252,7 +252,7 @@
                         VerticalAlignment="Center"
                         FontSize="12"
                         Foreground="{StaticResource SecondaryTextBrush}"
-                        Text="本地按键测试由 VoiceAnything 后台组件自动连接，不会弹出命令行窗口。" />
+                        Text="按键测试会自动连接 Voice Anything 后台组件，不会弹出命令行窗口。" />
                     <Button
                         x:Name="ContinueButton"
                         Grid.Column="1"
@@ -381,9 +381,9 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel>
-                    <TextBlock Margin="0,0,0,9" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Text="第 2 步 · 录音链路" />
+                    <TextBlock Margin="0,0,0,9" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Text="第 2 步 · 设置录音" />
                     <TextBlock FontSize="30" FontWeight="SemiBold" LineHeight="39" Text="让遥控器声音进入 Windows" TextWrapping="Wrap" />
-                    <TextBlock MaxWidth="570" Margin="0,12,0,0" FontSize="15" Foreground="{StaticResource SecondaryTextBrush}" LineHeight="24" Text="VoiceAnything 会连接 RC003MS 的真实语音服务，并把 16 kHz 音频送入 VB-CABLE。按住麦克风键时录音，松开后结束。" TextWrapping="Wrap" />
+                    <TextBlock MaxWidth="570" Margin="0,12,0,0" FontSize="15" Foreground="{StaticResource SecondaryTextBrush}" LineHeight="24" Text="Voice Anything 会连接所选设备的语音服务，将 16 kHz 音频送入 VB-CABLE。按住麦克风键开始录音，松开停止。" TextWrapping="Wrap" />
                 </StackPanel>
 
                 <ScrollViewer Grid.Row="1" Margin="0,28,0,8" VerticalScrollBarVisibility="Auto">
@@ -493,7 +493,7 @@
                                 <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Segoe Fluent Icons" FontSize="17" Foreground="{StaticResource SuccessBrush}" Text="&#xE702;" />
                             </Border>
                             <StackPanel Grid.Column="1" Margin="14,0,12,0" VerticalAlignment="Center">
-                                <TextBlock FontSize="15" FontWeight="SemiBold" Text="RC003MS 语音服务" />
+                                <TextBlock FontSize="15" FontWeight="SemiBold" Text="遥控器语音服务" />
                                 <TextBlock x:Name="AudioStatusText" Margin="0,3,0,0" FontSize="13" Foreground="{StaticResource SecondaryTextBrush}" Text="等待连接…" TextWrapping="Wrap" />
                             </StackPanel>
                             <Border x:Name="AudioStatusDot" Grid.Column="2" Width="10" Height="10" VerticalAlignment="Center" Background="#B7C0CA" CornerRadius="5" />
@@ -531,7 +531,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource SecondaryTextBrush}" Text="完成一次真实语音会话后才能继续。" />
+                    <TextBlock VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource SecondaryTextBrush}" Text="完成一次语音录音后，才能继续。" />
                     <Button x:Name="AudioContinueButton" Grid.Column="1" MinWidth="126" Click="AudioContinue_Click" Content="下一步  →" IsEnabled="False" Style="{StaticResource PrimaryButtonStyle}" />
                 </Grid>
             </Grid>
@@ -581,7 +581,7 @@
                 <StackPanel>
                     <TextBlock Margin="0,0,0,9" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Text="第 3 步 · 验证语音" />
                     <TextBlock FontSize="30" FontWeight="SemiBold" Text="听听遥控器刚才录到了什么" />
-                    <TextBlock MaxWidth="570" Margin="0,12,0,0" FontSize="15" Foreground="{StaticResource SecondaryTextBrush}" LineHeight="24" Text="系统会播放刚才保存的原始 16 kHz 录音。只有你亲自听到自己的声音，才算完成真机验证。" TextWrapping="Wrap" />
+                    <TextBlock MaxWidth="570" Margin="0,12,0,0" FontSize="15" Foreground="{StaticResource SecondaryTextBrush}" LineHeight="24" Text="播放刚才保存的原始 16 kHz 录音。请亲自听一遍，确认录到的是自己的声音，完成真机验证。" TextWrapping="Wrap" />
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Margin="0,34,0,0">
@@ -662,7 +662,7 @@
                     <StackPanel Margin="20,18,20,0">
                         <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Text="① 选择实体键" />
                         <TextBlock Margin="0,4,0,0" FontSize="18" FontWeight="SemiBold" Text="点击图上按键，或直接按真机" />
-                        <TextBlock Margin="0,5,0,0" FontSize="12" Foreground="{StaticResource SecondaryTextBrush}" Text="真机报告会自动定位到对应键位" />
+                        <TextBlock Margin="0,5,0,0" FontSize="12" Foreground="{StaticResource SecondaryTextBrush}" Text="按下遥控器上的键，图中会选中对应位置。" />
                     </StackPanel>
                     <Canvas x:Name="RemoteHotspotCanvas" Grid.Row="1" Width="192" Height="400" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Image Width="192" Height="400" Source="pack://application:,,,/VoiceAnything;component/Resources/RC003MS-remote-front-v2.png" Stretch="Uniform" />
@@ -694,8 +694,8 @@
                 </Grid.RowDefinitions>
                 <StackPanel>
                     <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" Text="第 4 步 · 个性化按键" />
-                    <TextBlock Margin="0,6,0,0" FontSize="27" FontWeight="SemiBold" Text="一个键，对应一个你定义的功能" />
-                    <TextBlock Margin="0,8,0,0" FontSize="14" Foreground="{StaticResource SecondaryTextBrush}" Text="按“选键位 → 选手势 → 选功能”设置；每次修改都会自动保存。" />
+                    <TextBlock Margin="0,6,0,0" FontSize="27" FontWeight="SemiBold" Text="选一个按键，设置它的动作" />
+                    <TextBlock Margin="0,8,0,0" FontSize="14" Foreground="{StaticResource SecondaryTextBrush}" Text="先选按键，再选手势和动作。修改会自动保存。" />
                 </StackPanel>
 
                 <ScrollViewer Grid.Row="1" Margin="0,18,0,12" VerticalScrollBarVisibility="Auto">

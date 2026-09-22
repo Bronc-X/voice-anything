@@ -655,13 +655,13 @@
 "onboarding.action.start" = "开始设置";
 "onboarding.action.continue" = "继续";
 "onboarding.action.open_app" = "打开无线麦";
-"onboarding.welcome.title" = "让手边的设备成为随手可用的无线麦";
-"onboarding.welcome.detail" = "我们会一起选择控制方式，完成权限、语音输出设备和真实语音检查，让你第一次使用时就知道每一部分都在正常工作。";
+"onboarding.welcome.title" = "用手边的设备说话输入";
+"onboarding.welcome.detail" = "先选择控制方式，再检查权限和语音输出设备，最后试一次语音输入，确认各项设置是否正常。";
 "onboarding.welcome.feature.voice" = "按住语音键，直接在常用工具里说话输入";
 "onboarding.welcome.feature.controls" = "用遥控器、iPhone 或网页控制方向、音量和常用操作";
-"onboarding.welcome.feature.verify" = "每项设置都现场检查，出问题时直接告诉你原因";
+"onboarding.welcome.feature.verify" = "逐项检查设置，遇到问题时查看原因";
 "onboarding.voice_tool.title" = "你准备在哪个工具里说话？";
-"onboarding.voice_tool.detail" = "选择常用工具，我们会为它准备合适的语音键方式。以后仍可在设置中修改。";
+"onboarding.voice_tool.detail" = "选择常用工具，应用会为它设置语音键的触发方式。以后仍可在设置中修改。";
 "onboarding.voice_tool.none_detected" = "未检测到豆包输入法、微信输入法或 Typeless。你仍可选择“其他语音工具”，但请先安装并打开一个支持语音输入的工具。";
 "onboarding.voice_tool.unselected.title" = "尚未选择";
 "onboarding.voice_tool.unselected.detail" = "尚未选择常用语音工具。";
@@ -701,7 +701,7 @@
 "onboarding.voice_tool.system_fn.detail" = "打开系统设置 → 键盘，把“按下 Fn/地球键时”改为“不执行任何操作”。";
 "onboarding.voice_tool.system_fn.open_settings" = "打开键盘设置";
 "onboarding.remote_availability.title" = "你现在有实体遥控器吗？";
-"onboarding.remote_availability.detail" = "实体遥控器可以获得完整、稳定的无线麦体验。如果当前没有，也可以继续使用手机。";
+"onboarding.remote_availability.detail" = "实体遥控器可以操作按键，也能用来收音。暂时没有遥控器，也可以继续使用手机。";
 "onboarding.remote_availability.has_remote.title" = "有遥控器";
 "onboarding.remote_availability.has_remote.detail" = "连接小米蓝牙遥控器，使用实体按键和遥控器麦克风。";
 "onboarding.remote_availability.no_remote.title" = "当前没有遥控器";
@@ -720,7 +720,7 @@
 "onboarding.control_method.no_iphone" = "没有 iPhone 时";
 "onboarding.control_method.illustration" = "选择现在就能使用的控制方式";
 "onboarding.permissions.title" = "允许无线麦连接和控制 Mac";
-"onboarding.permissions.detail" = "为确保所有控制方式、自定义按键和输入法切换都能正常使用，请开启以下三项权限。";
+"onboarding.permissions.detail" = "使用各种控制方式、自定义按键和输入法切换，需要开启以下三项权限。";
 "onboarding.permissions.bluetooth.detail" = "发现并连接已配对的蓝牙遥控器";
 "onboarding.permissions.input.detail" = "读取实体按键并支持 Fn 自动切换输入法";
 "onboarding.permissions.accessibility.detail" = "执行快捷键及 Typeless 的 Fn 点按";
@@ -765,7 +765,7 @@
 "onboarding.web_remote.retry" = "重新生成二维码";
 "onboarding.web_remote.button_detail" = "连接后，在网页版遥控器上按任意普通按键。";
 "onboarding.audio.title" = "选择虚拟音频设备";
-"onboarding.audio.detail" = "请选择 MiRemoteV 2ch 或 BlackHole 2ch。扬声器和其他普通音频设备不能完成语音输入链路。";
+"onboarding.audio.detail" = "请选择 MiRemoteV 2ch 或 BlackHole 2ch。扬声器和其他普通音频设备不能用于传送语音输入。";
 "onboarding.audio.device_detail" = "请先安装或启用 MiRemoteV 2ch 或 BlackHole 2ch，然后重新检查。";
 "onboarding.audio.no_devices" = "未检测到支持的虚拟音频设备";
 "onboarding.audio.selected" = "已选择 %1$@";
@@ -773,7 +773,7 @@
 "onboarding.audio.select_detail" = "从上方选择 MiRemoteV 2ch 或 BlackHole 2ch。";
 "onboarding.audio.refresh" = "重新检查";
 "onboarding.audio.on_demand_detail" = "手机开始语音时会自动连接所选设备；下一步将通过真实声音和文字进行验证。";
-"onboarding.voice_test.title" = "亲自说一句，确认真的能用";
+"onboarding.voice_test.title" = "说一句话，检查声音和文字";
 "onboarding.voice_test.detail" = "点一下下面的输入框，按住所选控制方式的语音键说话，说完后松开。";
 "onboarding.voice_test.other_detail" = "请在“%@”所用的其他语音工具中开启语音输入，并在工具设置里把“%@”选为麦克风。";
 "onboarding.voice_test.configuration.title" = "测试前核对：无线麦与%@必须一致";
@@ -804,7 +804,7 @@
 "onboarding.complete.detail" = "现在可以用所选控制方式说话输入，也可以在主面板中调整连接、语音和按键设置。";
 "onboarding.complete.runtime_changed" = "当前环境状态发生了变化";
 "onboarding.complete.runtime_changed_detail" = "请返回检查权限、遥控器连接或语音输出设备；恢复后即可继续。";
-"onboarding.complete.voice" = "语音链路已通过真实声音和文字检查";
+"onboarding.complete.voice" = "已收到声音，并确认文字输入正常";
 "onboarding.complete.controls" = "控制设备连接和普通按键已经确认";
 "onboarding.complete.settings" = "所有选项仍可在主面板中随时调整";
 "onboarding.illustration.tagline" = "无线说话，也能随手控制";
@@ -812,7 +812,7 @@
 
 "common.action.delete" = "删除";
 "statistics.transcripts.title" = "回眸";
-"statistics.transcripts.description" = "把语音转文字后实际写入目标输入框的文字保存在本机，并按应用和日期整理。";
+"statistics.transcripts.description" = "语音转成文字并写入目标输入框后，将这些文字保存在本机，按应用和日期整理。";
 "statistics.transcripts.enable" = "记录回眸";
 "statistics.transcripts.disabled" = "开启后，新的语音转文字结果会保存在本机。已有记录不会因关闭开关而删除。";
 "statistics.transcripts.empty" = "还没有语音记录。下一次完成语音输入后会显示在这里。";
@@ -957,7 +957,7 @@
 "onboarding.recovery.voice.audio_delivery_failed.title" = "声音没有完整送到所选虚拟设备";
 "onboarding.recovery.voice.audio_delivery_failed.detail" = "无线麦已收到遥控器声音，但实际设备绑定、音频入队或播放排空未通过。请重试音频设置后再说一次。";
 "onboarding.recovery.voice.audio_delivery_failed.action" = "重试音频输出";
-"onboarding.recovery.voice.external_tool_no_commit.title" = "声音链路正常，但语音工具没有写入文字";
+"onboarding.recovery.voice.external_tool_no_commit.title" = "已收到并输出声音，但语音工具没有写入文字";
 "onboarding.recovery.voice.external_tool_no_commit.detail" = "无线麦已收到并输出声音，输入框也已准备好。请确认所选工具支持语音输入，并在工具自己的设置中选择当前语音输出设备作为麦克风，然后重试。";
 "onboarding.recovery.voice.external_tool_no_commit.action" = "检查后重新测试";
 "onboarding.recovery.controls.not_confirmed.title" = "请试三个不同的普通按键";

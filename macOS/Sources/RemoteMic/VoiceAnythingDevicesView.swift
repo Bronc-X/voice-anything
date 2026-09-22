@@ -20,7 +20,7 @@ struct VoiceAnythingDevicesView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("设备与型号").font(.system(size: 28, weight: .semibold))
-                    Text("外形、按键与手势，来自同一份型号配置。 ").foregroundStyle(.secondary)
+                    Text("选好型号，就能看到它的外形、按键和可用手势。").foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button("导入型号包") { importProfile() }
@@ -30,13 +30,13 @@ struct VoiceAnythingDevicesView: View {
                 ForEach(devices.profiles) { Text($0.profile.name).tag($0.id) }
             }
             HStack {
-                Text(settings.selectedRemoteProfile == nil ? "先到连接页配对并选择一台设备。" : "将型号布局绑定到连接页中当前选中的设备。")
+                Text(settings.selectedRemoteProfile == nil ? "先到连接页配对并选择一台设备。" : "把这个型号的布局用于连接页选中的设备。")
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button(isBound ? "已应用" : "应用到当前设备") {
                     guard let selected, let device = settings.selectedRemoteProfile else { return }
                     do { try devices.bind(selected, to: device); message = "已应用。更改按键布局后，请重新连接设备。" }
-                    catch { message = "型号与设备已识别的型号不匹配，未改变当前配置。" }
+                    catch { message = "所选型号与设备报告的型号不符，原配置已保留。" }
                 }.disabled(settings.selectedRemoteProfile == nil || selected == nil || isBound)
             }
             if let selected {
@@ -72,7 +72,7 @@ struct VoiceAnythingDevicesView: View {
                         Spacer()
                         Text("macOS：\(selected.profile.validation["macos"] ?? "research")")
                             .font(.caption).foregroundStyle(.secondary)
-                        Text("导入配置不代表已通过真机验收。新的传输方式仍需实现适配器。")
+                        Text("导入型号包后，仍需真机验证。新的传输方式需要另写适配器。")
                             .font(.caption).foregroundStyle(.secondary)
                     }.frame(maxWidth: .infinity, alignment: .leading)
                 }

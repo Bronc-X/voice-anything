@@ -84,7 +84,7 @@ public partial class DevicesWindow : Window
         if (busy) return;
         if (ProfileList.SelectedItem is not InstalledDeviceProfile profile || DeviceList.SelectedItem is not DeviceInformation information)
         { StatusText.Text = "请选择型号和一台已配对的设备。"; return; }
-        busy = true; ConnectButton.IsEnabled = false; StatusText.Text = "正在读取实际型号与 ATVV 能力…";
+        busy = true; ConnectButton.IsEnabled = false; StatusText.Text = "正在核对设备型号与语音格式…";
         ProfileList.IsEnabled = false; DeviceList.IsEnabled = false;
         try
         {
@@ -136,7 +136,7 @@ public partial class DevicesWindow : Window
             Selected?.Invoke(profile);
             StatusText.Text = "设备身份已保存，主窗口将连接所选设备。按键桥仍需通过当前驱动校验。";
         }
-        catch (OperationCanceledException) { StatusText.Text = "读取设备能力超时。当前选择未改变，请唤醒遥控器后重试。"; }
+        catch (OperationCanceledException) { StatusText.Text = "核对设备信息超时，原选择已保留。请唤醒遥控器后重试。"; }
         catch (Exception error) when (error is COMException or IOException or UnauthorizedAccessException or InvalidOperationException or System.Text.Json.JsonException)
         { StatusText.Text = "验证未完成：" + error.Message; }
         finally { busy = false; ConnectButton.IsEnabled = true; ProfileList.IsEnabled = true; DeviceList.IsEnabled = true; }
@@ -166,7 +166,7 @@ public partial class DevicesWindow : Window
             Directory.Move(temporary, Path.Combine(UserProfiles, profile.Id));
             temporary = null;
             ProfileList.ItemsSource = Profiles();
-            StatusText.Text = "型号包已导入。选择真实设备完成验证后才能连接。";
+            StatusText.Text = "型号包已导入。请选择要使用的设备，验证通过后再连接。";
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
         { StatusText.Text = "导入失败：" + error.Message; }

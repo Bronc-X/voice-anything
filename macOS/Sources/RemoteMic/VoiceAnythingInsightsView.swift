@@ -49,7 +49,7 @@ struct VoiceAnythingInsightsView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("统计 · 回眸 · Agent").font(.system(size: 28, weight: .semibold))
-                    Text("每次按下，每段表达，都由你掌握。").foregroundStyle(.secondary)
+                    Text("统计和回眸保存在这台电脑。是否记录、授权哪些 Agent，由你决定。").foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button("刷新") { journal.reload() }
@@ -112,7 +112,7 @@ struct VoiceAnythingInsightsView: View {
     }
     private var reflectionsPage: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Toggle("记录由 Voice Anything 触发的语音输入结果", isOn: Binding(
+            Toggle("保存 Voice Anything 触发的语音输入结果", isOn: Binding(
                 get: { journal.document.recordReflections }, set: { enabled in
                     journal.setPrivacy(reflections: enabled, agents: journal.document.agentAccessEnabled) { error in
                         if error == nil { settings.localTranscriptHistoryEnabled = enabled }
@@ -154,7 +154,7 @@ struct VoiceAnythingInsightsView: View {
     private var agentPage: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("让你的 Agent 读懂过去的表达").font(.title2.weight(.semibold))
+                Text("授权 Agent 读取回眸与统计").font(.title2.weight(.semibold))
                 Text("本地只读 MCP：搜索回眸、读取单条记录、列出应用、查询统计。").foregroundStyle(.secondary)
                 Toggle("允许已授权的本地 Agent 读取", isOn: Binding(
                     get: { journal.document.agentAccessEnabled }, set: { journal.setPrivacy(reflections: journal.document.recordReflections, agents: $0) }))
@@ -167,7 +167,7 @@ struct VoiceAnythingInsightsView: View {
                 Divider()
                 Text("连接配置").font(.headline)
                 Text("授权码只在本次窗口中显示，请勿分享或提交到仓库。").font(.caption).foregroundStyle(.secondary)
-                Text(config.isEmpty ? "生成授权后，连接配置会出现在这里。" : config)
+                Text(config.isEmpty ? "生成授权后，在这里复制连接配置。" : config)
                     .font(.system(.caption, design: .monospaced)).textSelection(.enabled)
                     .frame(maxWidth: .infinity, minHeight: 140, alignment: .topLeading).padding(16)
                     .background(.background, in: RoundedRectangle(cornerRadius: 12))
