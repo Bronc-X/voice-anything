@@ -1,0 +1,811 @@
+import AppKit
+import Foundation
+
+struct RemoteButton: RawRepresentable, Hashable, CaseIterable, Codable, Identifiable {
+    let rawValue: String
+    init?(rawValue: String) {
+        guard rawValue.range(of: "^[A-Za-z][A-Za-z0-9_]{0,47}$", options: .regularExpression) != nil else { return nil }
+        self.rawValue = rawValue
+    }
+    init(from decoder: Decoder) throws {
+        let value = try decoder.singleValueContainer().decode(String.self)
+        guard let button = Self(rawValue: value) else { throw VAStorageError.invalid }
+        self = button
+    }
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+    static let power = RemoteButton(rawValue: "power")!
+    static let up = RemoteButton(rawValue: "up")!
+    static let left = RemoteButton(rawValue: "left")!
+    static let ok = RemoteButton(rawValue: "ok")!
+    static let right = RemoteButton(rawValue: "right")!
+    static let down = RemoteButton(rawValue: "down")!
+    static let back = RemoteButton(rawValue: "back")!
+    static let volumeUp = RemoteButton(rawValue: "volume_up")!
+    static let home = RemoteButton(rawValue: "home")!
+    static let volumeDown = RemoteButton(rawValue: "volume_down")!
+    static let menu = RemoteButton(rawValue: "menu")!
+    static let tv = RemoteButton(rawValue: "tv")!
+    static let playPause = RemoteButton(rawValue: "play_pause")!
+    static let mute = RemoteButton(rawValue: "mute")!
+    static let youtube = RemoteButton(rawValue: "youtube")!
+    static let netflix = RemoteButton(rawValue: "netflix")!
+    static let input = RemoteButton(rawValue: "input")!
+    static let allCases: [RemoteButton] = [.power, .up, .left, .ok, .right, .down, .back, .volumeUp, .home, .volumeDown, .menu, .tv, .playPause, .mute, .youtube, .netflix, .input]
+
+    /// Buttons physically present on the Xiaomi RC001/RC003 layout.
+    /// Siri Remote has its own private page and does not use this list.
+    static let xiaomiCases: [RemoteButton] = [
+        .power, .up, .left, .ok, .right, .down, .back,
+        .volumeUp, .home, .volumeDown, .menu, .tv,
+    ]
+
+    var id: String { rawValue }
+
+    var hidUsage: UInt16 {
+        switch self {
+        case .power: return 0x66
+        case .up: return 0x52
+        case .left: return 0x50
+        case .ok: return 0x28
+        case .right: return 0x4F
+        case .down: return 0x51
+        case .back: return 0xF1
+        case .volumeUp: return 0x80
+        case .home: return 0x4A
+        case .volumeDown: return 0x81
+        case .menu: return 0x65
+        case .tv: return 0x35
+        // Reserved values: these controls are decoded by the Siri Remote
+        // adapter and are not part of Xiaomi HID discovery.
+        case .playPause: return 0x1000
+        case .mute: return 0x1001
+        // Reserved values: decoded by the Chromecase adapter's own HID channel
+        // (usage 0x0E/0x0F/0x11 in that remote's report), never by Xiaomi discovery.
+        case .youtube: return 0x1002
+        case .netflix: return 0x1003
+        case .input: return 0x1004
+        default: return 0
+        }
+    }
+
+    func shortLabel(using localization: LocalizationStore) -> String {
+        switch self {
+        case .power: return localization.text("remote.button.short.power")
+        case .up: return localization.text("remote.button.short.up")
+        case .left: return localization.text("remote.button.short.left")
+        case .ok: return "OK"
+        case .right: return localization.text("remote.button.short.right")
+        case .down: return localization.text("remote.button.short.down")
+        case .back: return localization.text("remote.button.short.back")
+        case .volumeUp: return "+"
+        case .home: return localization.text("remote.button.short.home")
+        case .volumeDown: return "−"
+        case .menu: return localization.text("remote.button.short.menu")
+        case .tv: return "TV"
+        case .playPause: return localization.text("remote.button.short.play_pause")
+        case .mute: return localization.text("remote.button.short.mute")
+        case .youtube: return "YouTube"
+        case .netflix: return "NETFLIX"
+        case .input: return localization.text("remote.button.short.input")
+        default: return rawValue
+        }
+    }
+
+    func displayName(using localization: LocalizationStore) -> String {
+        switch self {
+        case .power: return localization.text("remote.button.full.power")
+        case .up: return localization.text("remote.button.full.up")
+        case .left: return localization.text("remote.button.full.left")
+        case .ok: return localization.text("remote.button.full.ok")
+        case .right: return localization.text("remote.button.full.right")
+        case .down: return localization.text("remote.button.full.down")
+        case .back: return localization.text("remote.button.full.back")
+        case .volumeUp: return localization.text("remote.button.full.volume_up")
+        case .home: return localization.text("remote.button.full.home")
+        case .volumeDown: return localization.text("remote.button.full.volume_down")
+        case .menu: return localization.text("remote.button.full.menu")
+        case .tv: return localization.text("remote.button.full.tv")
+        case .playPause: return localization.text("remote.button.full.play_pause")
+        case .mute: return localization.text("remote.button.full.mute")
+        case .youtube: return localization.text("remote.button.full.youtube")
+        case .netflix: return localization.text("remote.button.full.netflix")
+        case .input: return localization.text("remote.button.full.input")
+        default: return rawValue
+        }
+    }
+
+    static let usageMap = Dictionary(
+        uniqueKeysWithValues: xiaomiCases.map { ($0.hidUsage, $0) }
+    )
+
+    static func usageMap(for profileID: UUID?) -> [UInt16: RemoteButton] {
+        guard let installed = VoiceAnythingDevices.shared.profile(for: profileID) else { return usageMap }
+        return Dictionary(uniqueKeysWithValues: installed.profile.controls.compactMap { control in
+            control.button.map { (control.usage, $0) }
+        })
+    }
+    static func buttons(for usages: Set<UInt16>, profileID: UUID? = nil) -> Set<RemoteButton> {
+        let map = usageMap(for: profileID)
+        return Set(usages.compactMap { map[$0] })
+    }
+
+    var nativeEvent: RemoteNativeEvent? {
+        switch self {
+        case .ok: return .keyboard(keyCode: 36)
+        // Measured on a real RC003 (2026-08-22): the TV key's keyboard
+        // interface actually emits keyCode 10 (ISO §) with flags 0x100.
+        // 50 was the historical value from the initial release and never
+        // matched the hardware, so the suppressor missed the real event.
+        case .tv: return .keyboard(keyCode: 10)
+        case .home: return .keyboard(keyCode: 115)
+        case .right: return .keyboard(keyCode: 124)
+        case .left: return .keyboard(keyCode: 123)
+        case .down: return .keyboard(keyCode: 125)
+        case .up: return .keyboard(keyCode: 126)
+        case .menu: return .keyboard(keyCode: 110)
+        case .power: return .keyboard(keyCode: 90)
+        case .volumeUp: return .systemKey(type: 0)
+        case .volumeDown: return .systemKey(type: 1)
+        case .back: return nil
+        case .playPause: return .systemKey(type: 2)
+        case .mute: return .systemKey(type: 3)
+        // Chromecase 的三颗专有键由私有包的 HID 通道独占读取：映射开启时设备被整个独占，
+        // 系统侧不会同时收到事件，因此不存在需要抑制的原生事件。
+        case .youtube, .netflix, .input: return nil
+        default: return nil
+        }
+    }
+
+    var nativeEvents: Set<RemoteNativeEvent> {
+        guard let nativeEvent else { return [] }
+        return self == .tv ? [nativeEvent, .keyboard(keyCode: 50)] : [nativeEvent]
+    }
+}
+
+enum RemoteNativeEvent: Hashable {
+    case keyboard(keyCode: UInt16)
+    case systemKey(type: Int32)
+}
+
+enum RemoteEventEdge: Equatable {
+    case down
+    case up
+}
+
+struct CustomKeyboardShortcut: Codable, Equatable {
+    static let supportedModifiers: NSEvent.ModifierFlags = [
+        .control, .option, .shift, .command, .function,
+    ]
+
+    let keyCode: UInt16
+    let modifierFlagsRawValue: UInt
+    let keyLabel: String
+
+    init(keyCode: UInt16, modifierFlags: NSEvent.ModifierFlags, keyLabel: String) {
+        self.keyCode = keyCode
+        modifierFlagsRawValue = Self.normalizedModifierFlags(
+            keyCode: keyCode,
+            modifierFlags: modifierFlags
+        ).rawValue
+        self.keyLabel = keyLabel
+    }
+
+    init(event: NSEvent) {
+        self.init(
+            keyCode: event.keyCode,
+            modifierFlags: event.modifierFlags,
+            keyLabel: Self.keyLabel(for: event)
+        )
+    }
+
+    var modifierFlags: NSEvent.ModifierFlags {
+        Self.normalizedModifierFlags(
+            keyCode: keyCode,
+            modifierFlags: NSEvent.ModifierFlags(rawValue: modifierFlagsRawValue)
+        )
+    }
+
+    var cgEventFlags: CGEventFlags {
+        var flags: CGEventFlags = []
+        if modifierFlags.contains(.control) { flags.insert(.maskControl) }
+        if modifierFlags.contains(.option) { flags.insert(.maskAlternate) }
+        if modifierFlags.contains(.shift) { flags.insert(.maskShift) }
+        if modifierFlags.contains(.command) { flags.insert(.maskCommand) }
+        if modifierFlags.contains(.function) { flags.insert(.maskSecondaryFn) }
+        return flags
+    }
+
+    var standaloneModifier: StandaloneKeyboardModifier? {
+        StandaloneKeyboardModifier.matching(self)
+    }
+
+    private static func normalizedModifierFlags(
+        keyCode: UInt16,
+        modifierFlags: NSEvent.ModifierFlags
+    ) -> NSEvent.ModifierFlags {
+        var normalized = modifierFlags.intersection(Self.supportedModifiers)
+        if (123...126).contains(keyCode) {
+            normalized.remove(.function)
+        }
+        return normalized
+    }
+
+    func displayName(using localization: LocalizationStore) -> String {
+        if let standaloneModifier {
+            return standaloneModifier.displayName(using: localization)
+        }
+        var result = ""
+        if modifierFlags.contains(.control) { result += "⌃" }
+        if modifierFlags.contains(.option) { result += "⌥" }
+        if modifierFlags.contains(.shift) { result += "⇧" }
+        if modifierFlags.contains(.command) { result += "⌘" }
+        if modifierFlags.contains(.function) { result += "fn " }
+        return result + localizedKeyLabel(using: localization)
+    }
+
+    /// Compact macOS-style representation used by the mapping UI.
+    func visualDisplayName(using localization: LocalizationStore) -> String {
+        if let standaloneModifier {
+            return standaloneModifier.symbol
+        }
+        var result = ""
+        if modifierFlags.contains(.control) { result += "⌃" }
+        if modifierFlags.contains(.option) { result += "⌥" }
+        if modifierFlags.contains(.shift) { result += "⇧" }
+        if modifierFlags.contains(.command) { result += "⌘" }
+        if modifierFlags.contains(.function) { result += "fn " }
+        return result + visualKeyLabel
+    }
+
+    /// Full keyboard wording used by tooltips and accessibility labels.
+    func detailedDisplayName(using localization: LocalizationStore) -> String {
+        if let standaloneModifier {
+            return standaloneModifier.displayName(using: localization)
+        }
+        var parts: [String] = []
+        if modifierFlags.contains(.control) { parts.append(localization.text("shortcut.modifier.control")) }
+        if modifierFlags.contains(.option) { parts.append(localization.text("shortcut.modifier.option")) }
+        if modifierFlags.contains(.shift) { parts.append(localization.text("shortcut.modifier.shift")) }
+        if modifierFlags.contains(.command) { parts.append(localization.text("shortcut.modifier.command")) }
+        if modifierFlags.contains(.function) { parts.append(localization.text("shortcut.modifier.function")) }
+        parts.append(detailedKeyLabel(using: localization))
+        return parts.joined(separator: " + ")
+    }
+
+    private var visualKeyLabel: String {
+        switch keyCode {
+        case 36: return "⏎"
+        case 48: return "⇥"
+        case 49: return "␠"
+        case 51: return "⌫"
+        case 53: return "⎋"
+        case 76: return "⌤"
+        case 117: return "⌦"
+        default: return keyLabel
+        }
+    }
+
+    private func detailedKeyLabel(using localization: LocalizationStore) -> String {
+        switch keyCode {
+        case 36: return localization.text("keyboard.key.return")
+        case 48: return localization.text("keyboard.key.tab")
+        case 49: return localization.text("keyboard.key.space")
+        case 51: return localization.text("keyboard.key.delete")
+        case 53: return localization.text("keyboard.key.escape")
+        case 76: return localization.text("keyboard.key.enter")
+        case 123: return localization.text("keyboard.key.left")
+        case 124: return localization.text("keyboard.key.right")
+        case 125: return localization.text("keyboard.key.down")
+        case 126: return localization.text("keyboard.key.up")
+        default: return localizedKeyLabel(using: localization)
+        }
+    }
+
+    private func localizedKeyLabel(using localization: LocalizationStore) -> String {
+        switch keyCode {
+        case 36: return localization.text("keyboard.key.return")
+        case 48: return localization.text("keyboard.key.tab")
+        case 49: return localization.text("keyboard.key.space")
+        case 71: return localization.text("keyboard.key.clear")
+        case 76: return localization.text("keyboard.key.enter")
+        case 114: return localization.text("keyboard.key.help")
+        case 115: return localization.text("keyboard.key.home")
+        case 116: return localization.text("keyboard.key.page_up")
+        case 119: return localization.text("keyboard.key.end")
+        case 121: return localization.text("keyboard.key.page_down")
+        default:
+            if keyLabel.hasPrefix("Key Code ") || keyLabel.hasPrefix("键码 ") {
+                return String(
+                    format: localization.text("keyboard.key_code"),
+                    locale: localization.locale,
+                    arguments: [String(keyCode)]
+                )
+            }
+            return keyLabel
+        }
+    }
+
+    private static func keyLabel(for event: NSEvent) -> String {
+        switch event.keyCode {
+        case 36: return "Return"
+        case 48: return "Tab"
+        case 49: return "Space"
+        case 51: return "⌫"
+        case 53: return "Esc"
+        case 64: return "F17"
+        case 71: return "Clear"
+        case 76: return "Enter"
+        case 79: return "F18"
+        case 80: return "F19"
+        case 90: return "F20"
+        case 96: return "F5"
+        case 97: return "F6"
+        case 98: return "F7"
+        case 99: return "F3"
+        case 100: return "F8"
+        case 101: return "F9"
+        case 103: return "F11"
+        case 105: return "F13"
+        case 106: return "F16"
+        case 107: return "F14"
+        case 109: return "F10"
+        case 111: return "F12"
+        case 113: return "F15"
+        case 114: return "Help"
+        case 115: return "Home"
+        case 116: return "Page Up"
+        case 117: return "⌦"
+        case 118: return "F4"
+        case 119: return "End"
+        case 120: return "F2"
+        case 121: return "Page Down"
+        case 122: return "F1"
+        case 123: return "←"
+        case 124: return "→"
+        case 125: return "↓"
+        case 126: return "↑"
+        default:
+            let characters = event.charactersIgnoringModifiers ?? ""
+            return characters.isEmpty ? "Key Code \(event.keyCode)" : characters.uppercased()
+        }
+    }
+}
+
+enum ButtonTrigger: String, CaseIterable, Codable, Identifiable {
+    case singleClick
+    case doubleClick
+    case longPress
+
+    var id: String { rawValue }
+
+    func displayName(using localization: LocalizationStore) -> String {
+        switch self {
+        case .singleClick: return localization.text("trigger.single_click")
+        case .doubleClick: return localization.text("trigger.double_click")
+        case .longPress: return localization.text("trigger.long_press")
+        }
+    }
+}
+
+struct ConfiguredButtonAction: Codable, Equatable {
+    var action: ButtonAction
+    var shortcut: CustomKeyboardShortcut?
+    var applicationProfileID: UUID?
+
+    init(
+        action: ButtonAction,
+        shortcut: CustomKeyboardShortcut?,
+        applicationProfileID: UUID? = nil
+    ) {
+        self.action = action
+        self.shortcut = shortcut
+        self.applicationProfileID = applicationProfileID
+    }
+
+    static let disabled = ConfiguredButtonAction(action: .disabled, shortcut: nil)
+}
+
+enum CustomApplicationFocusStrategy: String, Codable, CaseIterable, Identifiable {
+    case none
+    case keyboardShortcut
+    case recordedAccessibility
+
+    var id: String { rawValue }
+
+    func displayName(using localization: LocalizationStore) -> String {
+        switch self {
+        case .none: return localization.text("custom_application.focus.none")
+        case .keyboardShortcut: return localization.text("custom_application.focus.shortcut")
+        case .recordedAccessibility: return localization.text("custom_application.focus.recorded")
+        }
+    }
+}
+
+struct NormalizedAccessibilityFrame: Codable, Equatable {
+    let x: Double
+    let y: Double
+    let width: Double
+    let height: Double
+}
+
+struct AccessibilityFocusTarget: Codable, Equatable {
+    let role: String
+    let identifier: String
+    let title: String
+    let description: String
+    let help: String
+    let placeholder: String
+    let context: String
+    let windowTitle: String
+    let normalizedFrame: NormalizedAccessibilityFrame?
+}
+
+struct CustomApplicationProfile: Codable, Equatable, Identifiable {
+    let id: UUID
+    var displayName: String
+    var bundleIdentifier: String
+    var applicationPath: String
+    var focusStrategy: CustomApplicationFocusStrategy
+    var focusShortcut: CustomKeyboardShortcut?
+    var accessibilityTarget: AccessibilityFocusTarget?
+
+    init(
+        id: UUID = UUID(),
+        displayName: String,
+        bundleIdentifier: String,
+        applicationPath: String,
+        focusStrategy: CustomApplicationFocusStrategy = .none,
+        focusShortcut: CustomKeyboardShortcut? = nil,
+        accessibilityTarget: AccessibilityFocusTarget? = nil
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.bundleIdentifier = bundleIdentifier
+        self.applicationPath = applicationPath
+        self.focusStrategy = focusStrategy
+        self.focusShortcut = focusShortcut
+        self.accessibilityTarget = accessibilityTarget
+    }
+}
+
+enum ApplicationFocusStrategy: Equatable {
+    case accessibilityComposer
+    case cmuxSurfaceAPI
+}
+
+enum PresetApplication: String, CaseIterable, Identifiable {
+    case remoteMic
+    case codex
+    case claude
+    case cmux
+    case weChat
+    case cursor
+    case xcode
+    case slack
+    case weCom
+    case neteaseMusic
+    case chrome
+    case safari
+    case zed
+
+    var id: String { rawValue }
+
+    func displayName(using localization: LocalizationStore) -> String {
+        switch self {
+        case .remoteMic: return localization.text("app.name")
+        case .codex: return "Codex"
+        case .claude: return "Claude"
+        case .cmux: return "cmux"
+        case .weChat: return localization.text("application.wechat")
+        case .cursor: return "Cursor"
+        case .xcode: return "Xcode"
+        case .slack: return "Slack"
+        case .weCom: return localization.text("application.wecom")
+        case .neteaseMusic: return localization.text("application.netease_music")
+        case .chrome: return "Chrome"
+        case .safari: return "Safari"
+        case .zed: return "Zed"
+        }
+    }
+
+    var bundleIdentifier: String {
+        switch self {
+        case .remoteMic: return "io.github.bronc-x.voice-anything"
+        case .codex: return "com.openai.codex"
+        case .claude: return "com.anthropic.claudefordesktop"
+        case .cmux: return "com.cmuxterm.app"
+        case .weChat: return "com.tencent.xinWeChat"
+        case .cursor: return "com.todesktop.230313mzl4w4u92"
+        case .xcode: return "com.apple.dt.Xcode"
+        case .slack: return "com.tinyspeck.slackmacgap"
+        case .weCom: return "com.tencent.WeWorkMac"
+        case .neteaseMusic: return "com.netease.163music"
+        case .chrome: return "com.google.Chrome"
+        case .safari: return "com.apple.Safari"
+        case .zed: return "dev.zed.Zed"
+        }
+    }
+
+    var focusStrategy: ApplicationFocusStrategy? {
+        switch self {
+        case .codex, .claude: return .accessibilityComposer
+        case .cmux: return .cmuxSurfaceAPI
+        default: return nil
+        }
+    }
+
+    static var installedBundleIdentifiers: Set<String> {
+        var identifiers: Set<String> = [remoteMic.bundleIdentifier]
+        identifiers.formUnion(allCases.compactMap { application in
+            NSWorkspace.shared.urlForApplication(withBundleIdentifier: application.bundleIdentifier)
+                .map { _ in application.bundleIdentifier }
+        })
+        return identifiers
+    }
+}
+
+enum ButtonActionCategory: String, CaseIterable, Identifiable {
+    case basicKeys
+    case systemAndMedia
+    case custom
+    case applications
+
+    var id: String { rawValue }
+
+    var localizationKey: String {
+        switch self {
+        case .basicKeys: return "button_mapping.action_group.basic_keys"
+        case .systemAndMedia: return "button_mapping.action_group.system_and_media"
+        case .custom: return "button_mapping.action_group.custom"
+        case .applications: return "button_mapping.action_group.applications"
+        }
+    }
+}
+
+enum ButtonAction: String, CaseIterable, Codable, Identifiable {
+    case disabled
+    case escape
+    case returnKey
+    case commandReturn
+    case shiftReturn
+    case commandCopy
+    case commandPaste
+    case commandClose
+    case commandQuit
+    case commandCut
+    case commandSelectAll
+    case commandUndo
+    case commandRedo
+    case commandFind
+    case commandSave
+    case commandDelete
+    case arrowUp
+    case arrowDown
+    case arrowLeft
+    case arrowRight
+    case scrollUp
+    case scrollDown
+    case deleteBackward
+    case showDesktop
+    case contextMenu
+    case appSwitcher
+    case volumeUp
+    case volumeDown
+    case volumeMute
+    case playPause
+    case previousCommandLeft
+    case nextCommandRight
+    case customShortcut
+    case focusInput
+    case openCustomApplication
+    case toggleLongRecording
+    case openRemoteMic
+    case openCodex
+    case openClaude
+    case openCmux
+    case openWeChat
+    case openCursor
+    case openXcode
+    case openSlack
+    case openWeCom
+    case openNeteaseMusic
+    case openChrome
+    case openSafari
+    case openZed
+
+    var id: String { rawValue }
+
+    func displayName(using localization: LocalizationStore) -> String {
+        switch self {
+        case .disabled: return localization.text("action.disabled")
+        case .escape: return "Escape"
+        case .returnKey: return "Return"
+        case .commandReturn: return "Command-Return"
+        case .shiftReturn: return "Shift-Return"
+        case .commandCopy: return "Command-C"
+        case .commandPaste: return "Command-V"
+        case .commandClose: return "Command-W"
+        case .commandQuit: return "Command-Q"
+        case .commandCut: return "Command-X"
+        case .commandSelectAll: return "Command-A"
+        case .commandUndo: return "Command-Z"
+        case .commandRedo: return "Command-Shift-Z"
+        case .commandFind: return "Command-F"
+        case .commandSave: return "Command-S"
+        case .commandDelete: return localization.text("action.command_delete")
+        case .arrowUp: return localization.text("action.arrow_up")
+        case .arrowDown: return localization.text("action.arrow_down")
+        case .arrowLeft: return localization.text("action.arrow_left")
+        case .arrowRight: return localization.text("action.arrow_right")
+        case .scrollUp: return localization.text("action.scroll_up")
+        case .scrollDown: return localization.text("action.scroll_down")
+        case .deleteBackward: return localization.text("action.delete_backspace")
+        case .showDesktop: return localization.text("action.show_desktop")
+        case .contextMenu: return localization.text("action.context_menu")
+        case .appSwitcher: return "Command-Tab"
+        case .volumeUp: return localization.text("action.system_volume_up")
+        case .volumeDown: return localization.text("action.system_volume_down")
+        case .volumeMute: return localization.text("action.system_mute")
+        case .playPause: return localization.text("action.play_pause")
+        case .previousCommandLeft: return localization.text("action.previous_command_left")
+        case .nextCommandRight: return localization.text("action.next_command_right")
+        case .customShortcut: return localization.text("action.custom_shortcut")
+        case .focusInput: return localization.text("action.focus_input")
+        case .openCustomApplication: return localization.text("action.open_custom_application")
+        case .toggleLongRecording: return localization.text("action.toggle_long_recording")
+        case .openRemoteMic: return localization.text("action.open_remote_mic")
+        case .openCodex: return localization.text("action.open_codex")
+        case .openClaude: return localization.text("action.open_claude")
+        case .openCmux: return localization.text("action.open_cmux")
+        case .openWeChat: return localization.text("action.open_wechat")
+        case .openCursor: return localization.text("action.open_cursor")
+        case .openXcode: return localization.text("action.open_xcode")
+        case .openSlack: return localization.text("action.open_slack")
+        case .openWeCom: return localization.text("action.open_wecom")
+        case .openNeteaseMusic: return localization.text("action.open_netease_music")
+        case .openChrome: return localization.text("action.open_chrome")
+        case .openSafari: return localization.text("action.open_safari")
+        case .openZed: return localization.text("action.open_zed")
+        }
+    }
+
+    var presetApplication: PresetApplication? {
+        switch self {
+        case .openRemoteMic: return .remoteMic
+        case .openCodex: return .codex
+        case .openClaude: return .claude
+        case .openCmux: return .cmux
+        case .openWeChat: return .weChat
+        case .openCursor: return .cursor
+        case .openXcode: return .xcode
+        case .openSlack: return .slack
+        case .openWeCom: return .weCom
+        case .openNeteaseMusic: return .neteaseMusic
+        case .openChrome: return .chrome
+        case .openSafari: return .safari
+        case .openZed: return .zed
+        default: return nil
+        }
+    }
+
+    var category: ButtonActionCategory {
+        if presetApplication != nil { return .applications }
+        switch self {
+        case .disabled, .escape, .returnKey, .commandReturn, .shiftReturn, .commandCopy,
+             .commandPaste, .commandClose, .commandQuit, .commandCut, .commandSelectAll,
+             .commandUndo, .commandRedo, .commandFind, .commandSave, .commandDelete,
+             .arrowUp, .arrowDown, .arrowLeft, .arrowRight, .scrollUp, .scrollDown,
+             .deleteBackward:
+            return .basicKeys
+        case .showDesktop, .contextMenu, .appSwitcher, .volumeUp, .volumeDown, .volumeMute,
+             .playPause, .previousCommandLeft, .nextCommandRight, .toggleLongRecording:
+            return .systemAndMedia
+        case .customShortcut, .focusInput, .openCustomApplication:
+            return .custom
+        case .openRemoteMic, .openCodex, .openClaude, .openCmux, .openWeChat, .openCursor,
+             .openXcode, .openSlack, .openWeCom, .openNeteaseMusic, .openChrome, .openSafari,
+             .openZed:
+            return .applications
+        }
+    }
+
+    var allowsRepeat: Bool {
+        ![
+            .customShortcut,
+            .focusInput,
+            .openCustomApplication,
+            .commandReturn,
+            .shiftReturn,
+            .commandCopy,
+            .commandPaste,
+            .commandClose,
+            .commandQuit,
+            .commandCut,
+            .commandSelectAll,
+            .commandUndo,
+            .commandRedo,
+            .commandFind,
+            .commandSave,
+            .commandDelete,
+            .previousCommandLeft,
+            .nextCommandRight,
+        ].contains(self) && presetApplication == nil && !isAppInternal
+    }
+
+    var isAppInternal: Bool {
+        self == .toggleLongRecording
+    }
+
+    func isEnabled(experimentalContinuousRecordingEnabled: Bool) -> Bool {
+        self != .toggleLongRecording || experimentalContinuousRecordingEnabled
+    }
+
+    static func pickerActions(
+        installedBundleIdentifiers: Set<String>,
+        current: ButtonAction,
+        experimentalContinuousRecordingEnabled: Bool
+    ) -> [ButtonAction] {
+        allCases.filter { action in
+            guard action.isEnabled(
+                experimentalContinuousRecordingEnabled: experimentalContinuousRecordingEnabled
+            ) else {
+                return action == current
+            }
+            guard let application = action.presetApplication else { return true }
+            return installedBundleIdentifiers.contains(application.bundleIdentifier) || action == current
+        }
+    }
+}
+
+enum RemoteHIDReportParser {
+    static func usages(reportID: UInt32, data: Data) -> Set<UInt16>? {
+        guard reportID == 1 else { return nil }
+        var bytes = Array(data)
+        if bytes.count == 7, bytes.first == UInt8(reportID) {
+            bytes.removeFirst()
+        }
+        guard !bytes.isEmpty, bytes.count.isMultiple(of: 2) else { return nil }
+
+        var result = Set<UInt16>()
+        for index in stride(from: 0, to: bytes.count, by: 2) {
+            let usage = UInt16(bytes[index]) | UInt16(bytes[index + 1]) << 8
+            if usage != 0 { result.insert(usage) }
+        }
+        return result
+    }
+}
+
+enum HIDPermissionGate {
+    static func canMonitor(
+        mappingEnabled: Bool,
+        inputMonitoringGranted: Bool,
+        accessibilityGranted: Bool,
+        powerKeySuppressed: Bool
+    ) -> Bool {
+        mappingEnabled && inputMonitoringGranted && accessibilityGranted && powerKeySuppressed
+    }
+
+    static func nextPermissionRequest(
+        mappingEnabled: Bool,
+        voiceFnTapModeEnabled: Bool = false,
+        voiceKeyMode: VoiceKeyMode = .function,
+        inputMonitoringGranted: Bool,
+        accessibilityGranted: Bool
+    ) -> HIDPermissionRequest {
+        guard mappingEnabled || voiceFnTapModeEnabled || voiceKeyMode.requiresAccessibility else {
+            return .none
+        }
+        if mappingEnabled, !inputMonitoringGranted { return .inputMonitoring }
+        if !accessibilityGranted { return .accessibility }
+        return .none
+    }
+}
+
+enum HIDPermissionRequest: Equatable {
+    case none
+    case inputMonitoring
+    case accessibility
+}

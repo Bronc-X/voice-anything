@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "id": "xiaomi-rc003",
+  "name": "小米蓝牙语音遥控器 2 Pro · RC003",
+  "adapter": "xiaomi-atvv-v1",
+  "modelNumbers": [
+    "RC003",
+    "RC003MS"
+  ],
+  "artwork": "remote.png",
+  "aspectRatio": 0.48,
+  "capabilities": {
+    "voice": true,
+    "holdToTalk": true,
+    "toggleVoice": false,
+    "battery": false,
+    "touch": false
+  },
+  "controls": [
+    {
+      "id": "Power",
+      "label": "电源",
+      "usage": 102,
+      "x": 0.3020833333333333,
+      "y": 0.0475,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    },
+    {
+      "id": "Microphone",
+      "label": "语音",
+      "usage": 62,
+      "x": 0.5208333333333334,
+      "y": 0.0475,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "voice"
+      ]
+    },
+    {
+      "id": "Up",
+      "label": "方向上",
+      "usage": 82,
+      "x": 0.4166666666666667,
+      "y": 0.1225,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    },
+    {
+      "id": "Left",
+      "label": "方向左",
+      "usage": 80,
+      "x": 0.2916666666666667,
+      "y": 0.1825,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    },
+    {
+      "id": "Ok",
+      "label": "确认",
+      "usage": 40,
+      "x": 0.4166666666666667,
+      "y": 0.1825,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    },
+    {
+      "id": "Right",
+      "label": "方向右",
+      "usage": 79,
+      "x": 0.5416666666666666,
+      "y": 0.1825,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    },
+    {
+      "id": "Down",
+      "label": "方向下",
+      "usage": 81,
+      "x": 0.4166666666666667,
+      "y": 0.2425,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    },
+    {
+      "id": "Back",
+      "label": "返回",
+      "usage": 241,
+      "x": 0.3229166666666667,
+      "y": 0.3175,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    },
+    {
+      "id": "VolumeUp",
+      "label": "音量加",
+      "usage": 128,
+      "x": 0.5104166666666666,
+      "y": 0.3175,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    },
+    {
+      "id": "Home",
+      "label": "主页",
+      "usage": 74,
+      "x": 0.3229166666666667,
+      "y": 0.3975,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    },
+    {
+      "id": "VolumeDown",
+      "label": "音量减",
+      "usage": 129,
+      "x": 0.5104166666666666,
+      "y": 0.3975,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    },
+    {
+      "id": "Menu",
+      "label": "菜单",
+      "usage": 101,
+      "x": 0.3229166666666667,
+      "y": 0.48,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    },
+    {
+      "id": "Tv",
+      "label": "电视",
+      "usage": 53,
+      "x": 0.5104166666666666,
+      "y": 0.48,
+      "width": 0.17708333333333334,
+      "height": 0.085,
+      "gestures": [
+        "single",
+        "double",
+        "long"
+      ]
+    }
+  ],
+  "validation": {
+    "windows": "candidate",
+    "macos": "candidate"
+  }
+}

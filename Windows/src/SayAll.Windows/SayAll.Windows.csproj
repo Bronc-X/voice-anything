@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <RootNamespace>SayAll.Windows</RootNamespace>
+    <AssemblyName>VoiceAnything</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\..\Resources\VoiceAnything.ico</ApplicationIcon>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="..\..\..\devices\**\*" Link="devices\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Manifest Include="$(ApplicationManifest)" />
+    <Using Remove="System.Drawing" />
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SayAll.Core\SayAll.Core.csproj" />
+    <ProjectReference Include="..\SayAll.HidBridge.Contracts\SayAll.HidBridge.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="..\..\..\Resources\RC003MS-remote-front-v2.png" Link="Resources\RC003MS-remote-front-v2.png" />
+    <Resource Include="..\..\..\Resources\VoiceAnything.ico" Link="Resources\VoiceAnything.ico" />
+  </ItemGroup>
+</Project>

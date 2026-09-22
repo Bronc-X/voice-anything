@@ -1,0 +1,39 @@
+name: Verify
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Contracts, integrations and builds
+        shell: pwsh
+        run: ./Windows/scripts/test-baseline.ps1
+      - name: Real MCP process
+        run: python scripts/check-mcp.py --dotnet dotnet --helper Windows/src/VoiceAnything.Mcp/bin/Debug/net10.0/VoiceAnything.Mcp.dll
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Native Swift tests
+        working-directory: macOS
+        run: swift --version && swift test
+      - name: Shared history and MCP contracts
+        run: |
+          dotnet run --project Windows/tests/VoiceAnything.Tests
+          dotnet build Windows/src/VoiceAnything.Mcp
+          python3 scripts/check-mcp.py --dotnet dotnet --helper Windows/src/VoiceAnything.Mcp/bin/Debug/net10.0/VoiceAnything.Mcp.dll
+      - name: Build native application bundle
+        run: bash macOS/scripts/build-app.sh

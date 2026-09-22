@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "recordReflections": false,
+  "agentAccessEnabled": false,
+  "days": [
+    {"date": "2026-09-21", "buttonPresses": 42, "voiceSeconds": 8.0, "voiceSessions": 1},
+    {"date": "2026-09-22", "buttonPresses": 0, "voiceSeconds": 8.0, "voiceSessions": 0}
+  ],
+  "reflections": [
+    {
+      "id": "fb1e536e-dbc7-4947-901b-d98bd84cdbd1",
+      "sessionId": "74f978ea-7cf6-407b-91ae-b9f0bfa4775b",
+      "startedAt": "2026-09-21T23:59:50+08:00",
+      "endedAt": "2026-09-22T00:00:10+08:00",
+      "application": "Example Editor",
+      "deviceModel": "xiaomi-rc003",
+      "text": "共享记录 café：只保存本次新增的文字。",
+      "captureMethod": "accessibility-delta-v1"
+    }
+  ],
+  "grants": []
+}
