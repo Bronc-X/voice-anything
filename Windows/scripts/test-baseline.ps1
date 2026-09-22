@@ -44,6 +44,7 @@ try {
         'build', 'src\SayAll.Setup\SayAll.Setup.csproj')
     Invoke-BaselineStep 'MCP helper build' @(
         'build', 'src\VoiceAnything.Mcp\VoiceAnything.Mcp.csproj')
+    & (Join-Path $PSScriptRoot 'test-uninstall-safety.ps1')
     Write-Host 'BASELINE PASS: automated contracts and builds; hardware acceptance is a separate check.'
 }
 finally {

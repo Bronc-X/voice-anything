@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Windows;
 using SayAll.HidBridge.Contracts;
+using Microsoft.Win32;
 
 [assembly: InternalsVisibleTo("SayAll.Windows.IntegrationTests")]
 
@@ -60,6 +61,8 @@ internal static class Program
         var bridgeSource = Path.Combine(payloadRoot, "HidBridge");
         RequireDirectory(appSource, "应用文件");
         RequireDirectory(bridgeSource, "后台按键组件");
+        var uninstallSource = Path.Combine(AppContext.BaseDirectory, "Uninstall.ps1");
+        RequireFile(uninstallSource, "卸载程序");
 
         StopServiceIfPresent(HidBridgeServiceContract.ServiceName);
         StopServiceIfPresent(HidBridgeServiceContract.LegacyServiceName);
@@ -111,7 +114,25 @@ internal static class Program
             $"Bridge={bridgeExecutable}{Environment.NewLine}" +
             $"App={appExecutable}{Environment.NewLine}",
             new UTF8Encoding(false));
+        File.Copy(uninstallSource, Path.Combine(InstallRoot, "Uninstall.ps1"), overwrite: true);
+        RegisterUninstaller(appExecutable);
         Log("VoiceAnything 主程序和后台服务已安装");
+    }
+
+    private static void RegisterUninstaller(string appExecutable)
+    {
+        using var key = Registry.LocalMachine.CreateSubKey(
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VoiceAnything")
+            ?? throw new IOException("无法注册卸载入口。");
+        var powershell = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
+        key.SetValue("DisplayName", "Voice Anything");
+        key.SetValue("DisplayVersion", "0.1.0-dev");
+        key.SetValue("Publisher", "Voice Anything contributors");
+        key.SetValue("InstallLocation", InstallRoot);
+        key.SetValue("DisplayIcon", appExecutable);
+        key.SetValue("UninstallString", $"\"{powershell}\" -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File \"{Path.Combine(InstallRoot, "Uninstall.ps1")}\"");
+        key.SetValue("NoModify", 1, RegistryValueKind.DWord);
+        key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
     }
 
     private static void InstallVerifiedGadget(string bridgeSource)
