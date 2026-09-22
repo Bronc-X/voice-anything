@@ -210,7 +210,7 @@ final class VoiceAnythingDevices: ObservableObject {
         UserDefaults.standard.set(values, forKey: "VoiceAnything.deviceProfiles")
         objectWillChange.send()
     }
-    func importProfile(from source: URL) throws {
+    func importProfile(from source: URL) throws -> String {
         let profile = try VADeviceProfile.load(at: source)
         guard !profiles.contains(where: { $0.id == profile.id }) else { throw VAStorageError.invalid }
         try FileManager.default.createDirectory(at: userDirectory, withIntermediateDirectories: true)
@@ -225,5 +225,6 @@ final class VoiceAnythingDevices: ObservableObject {
         _ = try VADeviceProfile.load(at: staging)
         try FileManager.default.moveItem(at: staging, to: userDirectory.appendingPathComponent(profile.id))
         reload()
+        return profile.id
     }
 }

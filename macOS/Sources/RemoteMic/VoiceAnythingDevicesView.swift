@@ -84,7 +84,14 @@ struct VoiceAnythingDevicesView: View {
             Text(message.isEmpty ? devices.status : message).font(.caption).foregroundStyle(.secondary)
         }.padding(28)
         .onAppear { selectedID = devices.profile(for: settings.selectedRemoteProfileID)?.id ?? devices.profiles.first?.id ?? "" }
-        .onChange(of: selectedID) { _, _ in controlID = ""; gesture = "single" }
+        .onChange(of: selectedID) { _, _ in
+            let first = selected?.profile.controls.first { $0.button != nil } ?? selected?.profile.controls.first
+            controlID = first?.id ?? ""
+            gesture = first?.gestures.first ?? "single"
+        }
+        .onChange(of: settings.selectedRemoteProfileID) { _, current in
+            if let profile = devices.profile(for: current) { selectedID = profile.id }
+        }
         .sheet(isPresented: $editingShortcut) {
             VStack(alignment: .leading, spacing: 18) {
                 Text("设置快捷键").font(.title2)
@@ -130,7 +137,7 @@ struct VoiceAnythingDevicesView: View {
         panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.allowsMultipleSelection = false
         panel.message = "选择包含 profile.json 的型号包文件夹"
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        do { try devices.importProfile(from: url); message = "型号包已导入。" }
+        do { selectedID = try devices.importProfile(from: url); message = "型号包已导入。" }
         catch { message = "导入失败：\(error.localizedDescription)" }
     }
 }

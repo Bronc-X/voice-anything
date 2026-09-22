@@ -40,6 +40,10 @@ struct VoiceAnythingInsightsView: View {
         }
     }
     private var selection: VAReflection? { records.first { $0.id == selected } }
+    private var voiceDurationText: String {
+        let seconds = days.reduce(0) { $0 + $1.voiceSeconds }
+        return seconds >= 60 ? String(format: "%.1f 分", seconds / 60) : String(format: "%.0f 秒", seconds)
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
@@ -82,7 +86,7 @@ struct VoiceAnythingInsightsView: View {
             }.pickerStyle(.segmented).frame(maxWidth: 420)
             HStack(spacing: 16) {
                 metric("按键次数", "\(days.reduce(Int64(0)) { $0 + $1.buttonPresses })", "每次实际按下计算一次")
-                metric("语音时长", String(format: "%.1f 分", days.reduce(0) { $0 + $1.voiceSeconds } / 60), "按实际收到的音频计算")
+                metric("语音时长", voiceDurationText, "按实际收到的音频计算")
                 metric("语音会话", "\(days.reduce(Int64(0)) { $0 + $1.voiceSessions })", "连续音频分段归为一次")
             }
             Text("每日记录").font(.headline)
@@ -104,6 +108,7 @@ struct VoiceAnythingInsightsView: View {
             Text(subtitle).font(.caption).foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity, alignment: .leading).padding(22)
             .background(.background, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.primary.opacity(0.08)))
     }
     private var reflectionsPage: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -127,7 +132,10 @@ struct VoiceAnythingInsightsView: View {
             if records.isEmpty { empty("没有找到回眸记录。开启记录并完成一次语音输入，或调整搜索条件。") }
             else {
                 Table(Array(records.dropFirst(page * 50).prefix(50)), selection: $selected) {
-                    TableColumn("时间", value: \.endedAt).width(170)
+                    TableColumn("时间") { record in
+                        Text(VoiceAnythingJournal.instant(record.endedAt)?.formatted(date: .numeric, time: .shortened) ?? record.endedAt)
+                            .help(record.endedAt)
+                    }.width(170)
                     TableColumn("应用", value: \.application).width(110)
                     TableColumn("输入的文字") { Text($0.text).lineLimit(4).padding(.vertical, 8) }
                 }
