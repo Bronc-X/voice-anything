@@ -122,9 +122,16 @@ final class VoiceAnythingJournal: ObservableObject {
             let fractional = ISO8601DateFormatter()
             fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
             let whole = ISO8601DateFormatter()
-            sortedReflections = value.reflections.map { record in
-                (record, fractional.date(from: record.endedAt) ?? whole.date(from: record.endedAt) ?? .distantPast)
-            }.sorted { $0.1 == $1.1 ? $0.0.id < $1.0.id : $0.1 > $1.1 }.map { $0.0 }
+            var dated: [(record: VAReflection, endedAt: Date)] = value.reflections.map { record in
+                let endedAt = fractional.date(from: record.endedAt)
+                    ?? whole.date(from: record.endedAt) ?? Date.distantPast
+                return (record: record, endedAt: endedAt)
+            }
+            dated.sort { left, right in
+                if left.endedAt == right.endedAt { return left.record.id < right.record.id }
+                return left.endedAt > right.endedAt
+            }
+            sortedReflections = dated.map { $0.record }
         }
         let newest = sortedReflections
         DispatchQueue.main.async {
