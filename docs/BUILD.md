@@ -23,6 +23,8 @@ SDK 没有加入 PATH 时，可给基线脚本设置 `SAYALL_DOTNET`，值为你
 
 运行安装器需要管理员权限。它把二进制放入 Program Files，仅给型号选择目录授权普通用户修改；同时停用旧 VibeControl/SayAll 按键服务，避免争用同一设备。升级前退出旧主程序。安装行为与真实设备测试不包含在无硬件的自动检查中。
 
+卸载前从托盘退出 Voice Anything，并断开 Agent 的 MCP 连接，再从 Windows“已安装的应用”卸载。卸载程序只清理本产品的服务、安装目录和开始菜单入口，保留本地回眸、统计、授权和设置，以及外部安装的音频驱动和共享 HID 运行库。卸载路径必须与安装位置一致，包含重解析点的目录会被拒绝。
+
 ## macOS
 
 要求 macOS 14+、Xcode、Swift 6.2+ 和 .NET 10 SDK。默认构建只使用公开源代码；不需要上游的私有可选包。
@@ -33,7 +35,7 @@ swift test
 bash scripts/build-app.sh
 ```
 
-脚本在 `artifacts` 中生成独立的 `.app`，包含共享型号包与对应架构的 MCP Helper。当前源码中的 macOS 新增部分尚未完成原生构建验收，请勿将生成物标为正式发布。
+脚本在 `artifacts` 中生成独立的 `.app`，包含共享型号包、许可文件和对应架构的自包含 MCP Helper。GitHub 的 Apple Silicon macOS runner 已完成 Swift 测试、完整打包、签名结构校验及 Helper 运行检查；Intel 分支尚未单独验收。生成物使用临时签名，尚未进行 Developer ID 签名、公证和真机验收，是开发包。
 
 自行安装兼容的虚拟音频设备，例如 [BlackHole 2ch](https://github.com/ExistentialAudio/BlackHole)，并授予应用蓝牙、输入监控和辅助功能权限。macOS 设备身份使用系统蓝牙 UUID；Windows 使用选中的蓝牙地址。不同系统的身份表示不会互相冒用。
 
@@ -53,6 +55,13 @@ dotnet build Windows/src/SayAll.Windows
 & ./Windows/src/SayAll.Windows/bin/Debug/net10.0-windows10.0.26100.0/win-x64/VoiceAnything.exe --capture-previews ./docs/images
 ```
 
-该模式实例化真实 WPF 窗口，使用独立临时数据和可见的“演示数据”标记，不启动硬件链路、不会更改个人输入法或快捷键配置。它可以验收界面渲染，不能代替实机连接、语音转写或设备切换验收。
+macOS 完整打包后，在仓库根目录执行：
 
-README 目前使用这些原生截图。指定的 GPT Image 2.5 美化步骤仍待可核实的模型入口；不要把其他模型的输出标为该模型。
+```sh
+app="$(cat artifacts/macos-app-path.txt)"
+VOICE_ANYTHING_PREVIEW_DIR="$PWD/artifacts/macos-previews" "$app/Contents/MacOS/RemoteMic"
+```
+
+这两种模式分别实例化真实 WPF 和 SwiftUI/AppKit 界面，使用独立临时数据和可见的预览标记，不启动硬件链路、不会更改个人输入法或快捷键配置。它们可以验收界面渲染，不能代替实机连接、语音转写或设备切换验收。
+
+README 同时保留原生截图和基于原图制作的展示封面，详见[截图说明](SCREENSHOTS.md)。

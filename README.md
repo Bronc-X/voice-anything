@@ -10,11 +10,11 @@ Windows · macOS · 本地回眸 · 只读 MCP · 可贡献的硬件型号
 
 </div>
 
-![按硬件外形配置按键](docs/images/windows-device-mapping.png)
+[![Voice Anything · 按硬件外形配置按键](docs/images/readme-hero.png)](docs/images/windows-device-mapping.png)
 
 选择型号，让界面显示它自己的外形与按键。按住说话，松开结束；让单击、双击和长按执行你习惯的动作。
 
-> 当前是开发预览。Windows 的自动检查与原生界面渲染已通过；macOS 尚待原生构建和真机验收。通过两端验收后才发布正式版本。当前内置适配器为 Xiaomi ATVV，其他协议需要贡献对应适配器。
+> 当前是开发预览。Windows 与 macOS 的自动检查、原生构建和界面渲染已通过；两端真机验收仍待完成。当前内置适配器为 Xiaomi ATVV，其他协议需要贡献对应适配器。
 
 ## 把表达留下来，由你决定
 
@@ -27,14 +27,22 @@ Windows · macOS · 本地回眸 · 只读 MCP · 可贡献的硬件型号
 
 本地 Agent 可通过 MCP 查询回眸与统计。每个客户端独立授权，随时撤销；接口不提供修改记录、执行命令或任意文件访问能力。
 
-以上是应用本身渲染的 Windows 原生界面，记录页使用明确标注的演示数据。macOS 截图将在原生验收后补充。
+以上是应用本身渲染的 Windows 原生界面，记录页使用明确标注的演示数据。封面由原生截图经过 AI 排版处理，点击可查看原图；截图来源与复现方式见[截图说明](docs/SCREENSHOTS.md)。
+
+## 在 macOS 中，继续使用同一套型号与数据格式
+
+| 按硬件配置 | 原生回眸 |
+| --- | --- |
+| ![macOS 设备与型号](docs/images/macos-devices.png) | ![macOS 回眸](docs/images/macos-reflections.png) |
+
+macOS 使用 SwiftUI 原生界面。两端读取同一种型号包，提供日/周统计、回眸检索与同一套 MCP 工具。上图由实际构建的 macOS 应用渲染，使用演示数据。
 
 ## 支持到哪里
 
 | 平台 | 当前接入路径 | 验证边界 |
 | --- | --- | --- |
 | Windows 11 x64 | RC003 / RC003MS、ATVV 16 kHz ADPCM、VB-CABLE、受指纹校验保护的 HID 桥 | 新版已通过自动检查；设备切换与完整语音流程仍需真机验收 |
-| macOS 14+ | 复用公开版 CoreBluetooth、IOHID 与 CoreAudio；新增共享型号配置、统计、回眸、MCP | 新增代码尚未在 macOS 编译和运行 |
+| macOS 14+ | 原生 CoreBluetooth、IOHID 与 CoreAudio；共享型号配置、统计、回眸、MCP | 644 项 Swift 测试、原生构建、临时签名与 MCP 运行检查通过；真机流程待验收 |
 
 型号包描述外形、按键、手势和能力。相同适配器支持的硬件可复用接入代码；相似协议仍要核对实际报文、音频格式与系统驱动。导入配置不会自动变成“已验证支持”。
 
